@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "rulepack_version": "2026.08.27-1",
+  "verified_on": "2026-08-27",
+  "review_due": "2027-02-23",
+  "scope": "ordinary physical-goods B2C ecommerce",
+  "coverage_groups": {
+    "EU": {
+      "statutory_withdrawal_days": 14,
+      "refund_deadline_days": 14,
+      "refund_deadline_unit": "calendar days",
+      "commercial_return_days": 14,
+      "return_shipping_mode": "customer_change_of_mind",
+      "restocking_fee": false
+    },
+    "EEA": {
+      "statutory_withdrawal_days": 14,
+      "refund_deadline_days": 14,
+      "refund_deadline_unit": "calendar days",
+      "commercial_return_days": 14,
+      "return_shipping_mode": "customer_change_of_mind",
+      "restocking_fee": false
+    },
+    "UK": {
+      "statutory_withdrawal_days": 14,
+      "refund_deadline_days": 14,
+      "refund_deadline_unit": "calendar days",
+      "commercial_return_days": 14,
+      "return_shipping_mode": "customer_change_of_mind",
+      "restocking_fee": false
+    },
+    "TR": {
+      "statutory_withdrawal_days": 14,
+      "refund_deadline_days": 14,
+      "refund_deadline_unit": "calendar days",
+      "commercial_return_days": 14,
+      "return_shipping_mode": "free_designated_carrier",
+      "restocking_fee": false
+    },
+    "CH": {
+      "statutory_withdrawal_days": null,
+      "refund_deadline_days": 10,
+      "refund_deadline_unit": "business days",
+      "commercial_return_days": 14,
+      "return_shipping_mode": "customer_change_of_mind",
+      "restocking_fee": false
+    }
+  },
+  "country_overlays": {
+    "Germany": {
+      "electronic_withdrawal_function": true,
+      "withdrawal_start_label": "Vertrag widerrufen",
+      "withdrawal_confirm_label": "Widerruf bestätigen"
+    },
+    "Spain": {"legal_guarantee": "at least 3 years for new goods"},
+    "Portugal": {"legal_guarantee": "3 years for movable goods, subject to Portuguese law"},
+    "Sweden": {"legal_guarantee": "a 3-year statutory complaint period"},
+    "Ireland": {"legal_guarantee": "statutory remedies and the applicable 6-year limitation period (2 years for bringing a claim after discovery under current Irish rules)"},
+    "Netherlands": {"legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap"},
+    "Finland": {"legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap"},
+    "Norway": {"legal_guarantee": "2 years, or 5 years for goods intended to last substantially longer"},
+    "Iceland": {"legal_guarantee": "2 years, or 5 years for goods intended to last substantially longer"},
+    "United Kingdom": {"legal_guarantee": "statutory remedies under the Consumer Rights Act 2015; limitation is generally 6 years in England/Wales/Northern Ireland and 5 years in Scotland"},
+    "Switzerland": {"legal_guarantee": "a two-year period for warranty actions for defective goods under Swiss Code of Obligations rules"}
+  },
+  "official_sources": {
+    "EU": [
+      "https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32011L0083",
+      "https://eur-lex.europa.eu/eli/dir/2019/771/oj"
+    ],
+    "Germany": [
+      "https://www.gesetze-im-internet.de/bgb/",
+      "https://www.gesetze-im-internet.de/bgbeg/"
+    ],
+    "UK": ["https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling"],
+    "CH": ["https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws"],
+    "TR": ["https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme"]
+  }
+}
