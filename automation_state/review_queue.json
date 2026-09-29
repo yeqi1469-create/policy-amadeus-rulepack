@@ -1,13 +1,25 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-09-29T06:56:14.013594+00:00",
+    "last_seen": "2026-09-29T07:00:36.344347+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Country — Andorra": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
     "last_seen": "2026-09-29T06:56:14.013594+00:00",
+    "status": "retry_official_source",
+    "observed_source_fingerprints": {}
+  },
+  "Turkey distance contracts": {
+    "first_seen": "2026-09-29T07:00:36.344347+00:00",
+    "last_seen": "2026-09-29T07:00:36.344347+00:00",
+    "status": "retry_official_source",
+    "observed_source_fingerprints": {}
+  },
+  "Germany BGB": {
+    "first_seen": "2026-09-29T07:00:36.344347+00:00",
+    "last_seen": "2026-09-29T07:00:36.344347+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   }
