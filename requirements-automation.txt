@@ -1,0 +1,8 @@
+requests==2.32.5
+tzdata>=2025.2
+cryptography>=46,<49
+pillow>=11,<13
+pypdf>=6,<8
+deep-translator==1.11.4
+translatepy==2.3
+pyinstaller>=6.22,<7

@@ -1,0 +1,29 @@
+[
+  {
+    "review_status": "approved",
+    "effective_on": "2026-10-01",
+    "country": "Austria",
+    "effective_timezone": "Europe/Vienna",
+    "legal_version_name": "Austrian FAGG electronic withdrawal function",
+    "legal_version": "FAGG section 13a, BGBl. I Nr. 59/2026 (effective 2026-10-01)",
+    "evidence": ["https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P13a/NOR40279256"],
+    "overlay_updates": {
+      "electronic_withdrawal_function": true,
+      "withdrawal_start_label": "Vertrag widerrufen",
+      "withdrawal_confirm_label": "Widerruf bestätigen",
+      "official_update_note": "FAGG section 13a applies from 1 October 2026 to new contracts, requiring a prominent electronic withdrawal function, confirmation step and immediate durable acknowledgement. Publishing policy text alone does not implement this website function."
+    }
+  },
+  {
+    "review_status": "approved",
+    "effective_on": "2026-10-01",
+    "country": "Finland",
+    "effective_timezone": "Europe/Helsinki",
+    "legal_version_name": "Finnish deferred-payment identity verification",
+    "legal_version": "Consumer Protection Act chapter 6 section 12c, Law 835/2026 (effective 2026-10-01)",
+    "evidence": ["https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/835"],
+    "overlay_updates": {
+      "national_product_marketing_clause": "For sales to Finland, environmental claims must be accurate and substantiated under sections 6a-6b of the Consumer Protection Act as amended by Law 573/2026. If an online customer selects a deferred-payment method, the applicable strong identity-verification requirements under chapter 6 section 12c must be satisfied before concluding the contract. This statement does not itself implement identity verification."
+    }
+  }
+]

@@ -1,9 +1,34 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.08.27-1",
-  "verified_on": "2026-08-27",
-  "review_due": "2027-02-23",
+  "rulepack_version": "2026.09.29-1",
+  "verified_on": "2026-09-29",
+  "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
+  "legal_versions": {
+    "EU Consumer Rights Directive": "2026-09-27",
+    "EU Sale of Goods Directive": "2026-07-31",
+    "Italian Consumer Code": "2026-07-27",
+    "Austrian FAGG": "BGBl. I Nr. 59/2026",
+    "Finnish Consumer Protection Act": "L 573/2026",
+    "Dutch Book 6 environmental-claims amendments": "Stb. 2026, 152 / 204 (in force 2026-07-16)",
+    "Slovak Consumer Protection Act": "Act 108/2024 (current version 2026-07-31)",
+    "Ukrainian Consumer Protection Act": "Act 1023-XII, revision 2024-12-24; Act 3153-IX not yet in force",
+    "Montenegrin Consumer Protection Act": "Law 12/2026 (in force 2026-02-14)",
+    "Luxembourg Consumer Code": "Law 9 June 2026 (Mémorial A283; effective 2026-09-27)"
+  },
+  "future_legal_versions": {
+    "Austrian FAGG electronic withdrawal function": {
+      "effective_on": "2026-10-01",
+      "version": "FAGG section 13a, BGBl. I Nr. 59/2026 (effective 2026-10-01)",
+      "official_source": "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P13a/NOR40279256"
+    },
+    "Finnish deferred-payment identity verification": {
+      "effective_on": "2026-10-01",
+      "version": "Consumer Protection Act chapter 6 section 12c, Law 835/2026 (effective 2026-10-01)",
+      "official_source": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/835",
+      "scope_note": "Conditional on offering a deferred-payment method; not a change to shipping, withdrawal or refund deadlines."
+    }
+  },
   "coverage_groups": {
     "EU": {
       "statutory_withdrawal_days": 14,
@@ -12,6 +37,8 @@
       "commercial_return_days": 14,
       "return_shipping_mode": "customer_change_of_mind",
       "restocking_fee": false
+      ,"repair_remedy_liability_extension_months": 12
+      ,"objective_conformity_includes_repairability": true
     },
     "EEA": {
       "statutory_withdrawal_days": 14,
@@ -52,12 +79,54 @@
       "withdrawal_start_label": "Vertrag widerrufen",
       "withdrawal_confirm_label": "Widerruf bestätigen"
     },
+    "Italy": {
+      "electronic_withdrawal_function": true,
+      "withdrawal_start_label": "Esercita il diritto di recesso",
+      "withdrawal_confirm_label": "Conferma il recesso",
+      "consumer_code_version": "2026-07-27",
+      "official_update_note": "The current consolidated Italian Consumer Code includes Article 54-bis on an online withdrawal function, the 2026 environmental-claim amendments, and the product-safety and market-surveillance amendments effective in July 2026.",
+      "national_product_marketing_clause": "For sales to Italy, product listings and commercial communications must present required safety, conformity, manufacturer or responsible-person information and any environmental claims accurately, and must not mislead consumers. Safety notices, recalls and lawful requests from market-surveillance authorities must be handled promptly.",
+      "official_source": "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2005-09-06;206!vig="
+    },
     "Spain": {"legal_guarantee": "at least 3 years for new goods"},
     "Portugal": {"legal_guarantee": "3 years for movable goods, subject to Portuguese law"},
     "Sweden": {"legal_guarantee": "a 3-year statutory complaint period"},
-    "Ireland": {"legal_guarantee": "statutory remedies and the applicable 6-year limitation period (2 years for bringing a claim after discovery under current Irish rules)"},
-    "Netherlands": {"legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap"},
-    "Finland": {"legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap"},
+    "Ireland": {"legal_guarantee": "statutory remedies for faulty goods that may remain available for up to 6 years, depending on the goods and circumstances"},
+    "Netherlands": {
+      "legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap",
+      "national_product_marketing_clause": "For sales to the Netherlands, environmental and sustainability claims in product listings and commercial communications must be specific, substantiated and not misleading. Generic or absolute environmental claims must not be used without the evidence required by the amended Book 6 rules.",
+      "official_update_note": "The Act of 27 May 2026 (Stb. 2026, 152), brought into force by Stb. 2026, 204 from 16 July 2026, amended Book 6 to implement Directive (EU) 2024/825 on environmental claims. The generator now carries the corresponding marketing restriction."
+    },
+    "Finland": {
+      "legal_guarantee": "a conformity period based on the product's reasonably expected lifetime rather than a fixed two-year cap",
+      "national_product_marketing_clause": "For sales to Finland, environmental claims in product listings and commercial communications must be accurate and substantiated, and misleading environmental marketing is prohibited under sections 6a-6b of the Consumer Protection Act as amended by Law 573/2026.",
+      "official_update_note": "Law 573/2026 was issued on 26 June 2026: chapters 5 and 8 apply from 31 July 2026; chapters 2 and 6, including environmental claims and pre-contract information, apply from 27 September 2026. Law 835/2026 was published on 10 September 2026 and applies from 1 October 2026, including strong identity verification when online customers select deferred payment. This conditional payment rule does not change ordinary withdrawal or refund deadlines."
+    },
+    "Austria": {
+      "national_product_marketing_clause": "For sales to Austria, commercial communications and product listings must present environmental and sustainability claims accurately and in a substantiated way, and must not mislead consumers, as required by the FAGG as amended by BGBl. I Nr. 59/2026 implementing Directive (EU) 2023/2673 and Directive (EU) 2024/825.",
+      "official_update_note": "Austria amended the FAGG by BGBl. I Nr. 59/2026 (implementing Directive (EU) 2023/2673 and Directive (EU) 2024/825). The 14-day withdrawal right and refund deadlines are unchanged."
+    },
+    "Russia": {
+      "official_update_note": "Federal Rospotrebnadzor guidance dated 21 May 2026 confirms that distance-sale customers may refuse a conforming product before delivery or within 7 days after delivery, and the seller must refund within 10 days after the request, subject to statutory deductions and exceptions.",
+      "national_product_marketing_clause": "For sales to Russia, product listings must state the seller identity, essential characteristics, delivery, payment, warranty and return information required by Russian consumer law."
+    },
+    "Slovakia": {
+      "official_update_note": "Act 108/2024 Z. z. is the current Slovak Consumer Protection Act. The version effective from 31 July 2026 replaces the older distance-selling statute as the principal consumer framework; the EU 14-day withdrawal baseline remains, subject to Slovak transitional rules.",
+      "national_product_marketing_clause": "For sales to Slovakia, product listings and checkout information must accurately state the seller identity, price, delivery, withdrawal and conformity information required by Act 108/2024 Z. z."
+    },
+    "Ukraine": {
+      "official_update_note": "The current Act 1023-XII page is consolidated through 24 December 2024. Act 3153-IX (current revision 2 March 2026) is enacted but its replacement framework is not yet in force; it must be recorded as a future change and must not be applied early.",
+      "national_product_marketing_clause": "For sales to Ukraine, product listings must provide accurate seller, product, price, delivery, payment and warranty information required by the currently effective Ukrainian consumer-protection law."
+    },
+    "Montenegro": {
+      "official_update_note": "The new Consumer Protection Act published in Official Gazette 12/2026 entered into force on 14 February 2026 and replaces the prior consumer-protection acts. It covers conformity of goods, goods with digital elements, consumer information, price transparency, unfair practices and enforcement.",
+      "national_product_marketing_clause": "For sales to Montenegro, product listings and checkout information must accurately state conformity, digital-element, price, delivery, withdrawal, complaint and seller information required by the 2026 Consumer Protection Act."
+    },
+    "Luxembourg": {
+      "national_product_marketing_clause": "For sales to Luxembourg, environmental, social and sustainability claims must be accurate and supported by objective, verifiable evidence. Sustainability labels must meet applicable legal requirements. Where applicable, required information about durability, repairability, recycling and legal or commercial guarantees must be provided before purchase. A commercial durability guarantee never replaces mandatory legal conformity rights.",
+      "official_update_note": "Luxembourg Law of 9 June 2026 (Mémorial A283), implementing Directive (EU) 2024/825, applies from 27 September 2026. The national overlay now includes the strengthened rules on claims, sustainability labels and pre-purchase product information. The 14-day withdrawal and refund deadlines are unchanged.",
+      "official_source": "https://legilux.public.lu/eli/etat/leg/loi/2026/06/09/a283/jo"
+    },
     "Norway": {"legal_guarantee": "2 years, or 5 years for goods intended to last substantially longer"},
     "Iceland": {"legal_guarantee": "2 years, or 5 years for goods intended to last substantially longer"},
     "United Kingdom": {"legal_guarantee": "statutory remedies under the Consumer Rights Act 2015; limitation is generally 6 years in England/Wales/Northern Ireland and 5 years in Scotland"},
@@ -65,8 +134,8 @@
   },
   "official_sources": {
     "EU": [
-      "https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32011L0083",
-      "https://eur-lex.europa.eu/eli/dir/2019/771/oj"
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02011L0083-20260927",
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02019L0771-20260731"
     ],
     "Germany": [
       "https://www.gesetze-im-internet.de/bgb/",
@@ -74,6 +143,18 @@
     ],
     "UK": ["https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling"],
     "CH": ["https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws"],
-    "TR": ["https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme"]
+    "TR": ["https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme"],
+    "Italy": [
+      "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2005-09-06;206!vig=",
+      "https://www.normattiva.it/atto/caricaDettaglioAtto?atto.codiceRedazionale=26G00002&atto.dataPubblicazioneGazzetta=2026-01-08&classica=true",
+      "https://www.normattiva.it/atto/caricaDettaglioAtto?atto.codiceRedazionale=26G00047&atto.dataPubblicazioneGazzetta=2026-03-09&dataVigenza=24%2F04%2F2026&classica=true",
+      "https://www.normattiva.it/atto/caricaDettaglioAtto?atto.codiceRedazionale=26G00093&atto.dataPubblicazioneGazzetta=2026-05-15&dataVigenza=08%2F07%2F2026&classica=true"
+    ],
+    "Luxembourg": [
+      "https://legilux.public.lu/eli/etat/leg/code/consommation/20170101/fr",
+      "https://legilux.public.lu/eli/etat/leg/loi/2026/06/09/a283/jo",
+      "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html",
+      "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html"
+    ]
   }
 }

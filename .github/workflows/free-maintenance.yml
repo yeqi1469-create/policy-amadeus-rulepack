@@ -1,0 +1,72 @@
+name: Free policy maintenance
+on:
+  schedule:
+    - cron: '17 * * * *'
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['*.py', '*.json', '*.ps1', '*.spec', 'requirements-automation.txt', '.github/workflows/free-maintenance.yml']
+permissions:
+  contents: write
+concurrency:
+  group: free-policy-maintenance
+  cancel-in-progress: false
+jobs:
+  maintain:
+    # Never consume private-repository billed runner minutes.
+    if: github.event.repository.private == false
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-automation.txt
+      - name: Activate only pre-reviewed effective changes
+        run: python automation_pipeline.py activate
+      - name: All-country daily coverage and hourly retries
+        run: python automation_pipeline.py check
+      - name: Regression tests (synthetic identity, no customer data)
+        env:
+          POLICY_AUTOMATION_SYNTHETIC_IDENTITY: '1'
+        run: python -m unittest discover -p 'test_*.py' -v
+      - name: Determine release changes
+        id: changes
+        shell: pwsh
+        run: |
+          $needed = python automation_pipeline.py release-needed
+          "needed=$needed" >> $env:GITHUB_OUTPUT
+      - name: Build Windows application
+        if: steps.changes.outputs.needed == 'true'
+        run: python -m PyInstaller --noconfirm 'Shopify Policy Studio.spec'
+      - name: Sign release using encrypted repository secret
+        if: steps.changes.outputs.needed == 'true'
+        env:
+          POLICY_AMADEUS_PUBLISHER_KEY_B64: ${{ secrets.POLICY_AMADEUS_PUBLISHER_KEY_B64 }}
+        run: python publisher_tools.py https://raw.githubusercontent.com/${{ github.repository }}/main --app-exe "dist/Policy Amadeus.exe"
+      - name: Publish and preserve audit history
+        shell: pwsh
+        env:
+          RELEASE_NEEDED: ${{ steps.changes.outputs.needed }}
+        run: |
+          if ($env:RELEASE_NEEDED -eq 'true') {
+            Copy-Item rulepack_release/manifest.json, rulepack_release/app_manifest.json, rulepack_release/PolicyAmadeus.exe -Destination . -Force
+            python automation_pipeline.py mark-published
+          }
+          git config user.name 'policy-maintenance-bot'
+          git config user.email 'policy-maintenance-bot@users.noreply.github.com'
+          git add automation_state legal_rulepack.json
+          if ($env:RELEASE_NEEDED -eq 'true') { git add manifest.json app_manifest.json PolicyAmadeus.exe }
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 1) {
+            git commit -m 'Record policy maintenance and verified release [skip ci]'
+            git push
+            if ($LASTEXITCODE -ne 0) { throw 'Automatic publication failed' }
+          }
+      - name: Record failure without paid artifact storage
+        if: failure()
+        shell: pwsh
+        run: |
+          'Maintenance failed. No new release is approved by this run.' >> $env:GITHUB_STEP_SUMMARY
