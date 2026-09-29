@@ -94,6 +94,16 @@ def _record(result: dict[str, object]) -> dict[str, object]:
     return result
 
 
+def _already_staged(version: str, digest: str) -> bool:
+    try:
+        pending = json.loads((_data_dir() / "pending_app_update.json").read_text(encoding="utf-8"))
+        age = datetime.now().timestamp() - float(pending["created_at"])
+        return (pending["version"] == version and pending["sha256"] == digest
+                and 0 <= age < 12 * 3600 and Path(pending["staged"]).is_file())
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 def _stage_app_update() -> dict[str, object]:
     if not getattr(sys, "frozen", False) or sys.platform != "win32":
         return {"app": "source_run", "version": installed_version()}
@@ -112,18 +122,23 @@ def _stage_app_update() -> dict[str, object]:
     version, download_url, digest = _verify_manifest(response.json(), config["publisher_public_key"])
     if version_key(version) <= version_key(installed_version()):
         return {"app": "current", "version": installed_version()}
+    if _already_staged(version, digest):
+        return {"app": "waiting_for_app_exit", "installed_version": installed_version(), "new_version": version}
     staged = _download_verified(download_url, digest)
     helper = _data_dir() / "apply_app_update.ps1"
     shutil.copyfile(_resource("apply_app_update.ps1"), helper)
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
-        subprocess.Popen(
+        process = subprocess.Popen(
             ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
              "-WindowStyle", "Hidden", "-File", str(helper), "-ParentPid", str(os.getpid()),
              "-Target", str(Path(sys.executable).resolve()), "-Staged", str(staged),
              "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json")],
             creationflags=flags,
         )
+        from update_storage import write_json
+        write_json(_data_dir() / "pending_app_update.json", {"version": version, "sha256": digest,
+                   "staged": str(staged), "created_at": datetime.now().timestamp(), "helper_pid": process.pid})
     except Exception:
         staged.unlink(missing_ok=True)
         raise

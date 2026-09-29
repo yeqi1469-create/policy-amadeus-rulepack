@@ -695,7 +695,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
                 "status": (
                     "temporarily_unreachable" if f"Country — {country}" in unreachable else
                     "source_changed" if f"Country — {country}" in changed else
-                    "verified_no_change" if f"Country — {country}" in current else
+                    "source_fingerprint_no_change" if f"Country — {country}" in current and
+                    any(url in previous.get(f"Country — {country}", {}) for url in current[f"Country — {country}"]) else
+                    "baseline_requires_review" if f"Country — {country}" in current else
                     "not_verified"
                 ),
                 "official_sources_reached": sorted(current.get(f"Country — {country}", {})),

@@ -52,6 +52,30 @@ class AutomationTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 init_key()
 
+    def test_waiting_install_does_not_duplicate_download(self):
+        import os
+        from datetime import datetime
+        from app_updater import _already_staged
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"LOCALAPPDATA": directory}):
+            root = Path(directory) / "Policy Amadeus"
+            root.mkdir()
+            staged = root / "staged.exe"
+            staged.write_bytes(b"MZ")
+            write_json(root / "pending_app_update.json", {"version": "new", "sha256": "a" * 64,
+                       "staged": str(staged), "created_at": datetime.now().timestamp()})
+            self.assertTrue(_already_staged("new", "a" * 64))
+            self.assertFalse(_already_staged("different", "a" * 64))
+
+    def test_first_observation_is_not_claimed_as_verified_no_change(self):
+        import os
+        import knowledge_update as knowledge
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"LOCALAPPDATA": directory}):
+            with patch("knowledge_update.update_from_manifest", return_value={"state": "current"}), patch("knowledge_update._fingerprint_source", side_effect=lambda urls: {urls[0]: "a" * 64}):
+                knowledge.run_startup_check()
+            coverage = json.loads((knowledge._cache_path().parent / "knowledge_coverage_latest.json").read_text(encoding="utf-8"))
+            self.assertEqual(coverage["countries"]["Germany"]["status"], "baseline_requires_review")
+            self.assertFalse(coverage["countries"]["Germany"]["full_national_legal_review_completed"])
+
     def test_signed_exact_review_does_not_clear_other_changes(self):
         import os
         import knowledge_update as knowledge

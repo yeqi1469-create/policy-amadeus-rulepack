@@ -1,0 +1,6 @@
+# Signed JSON payloads must retain exact bytes through Windows checkout/commit.
+*.json -text
+*.exe binary
+*.ico binary
+*.png binary
+*.jpg binary

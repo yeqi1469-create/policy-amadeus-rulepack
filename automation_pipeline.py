@@ -102,6 +102,12 @@ def check() -> dict:
         entry = queue.setdefault(name, {"first_seen": raw["checked_at"]})
         entry.update(last_seen=raw["checked_at"], status="pending_legal_review" if name in raw["changed"] else "retry_official_source",
                      observed_source_fingerprints=raw.get("observed_source_fingerprints", {}).get(name, {}))
+    for country, row in raw["countries"].items():
+        name = f"Country — {country}"
+        if row["status"] == "baseline_requires_review" and name not in queue:
+            queue[name] = {"first_seen": raw["checked_at"], "last_seen": raw["checked_at"],
+                           "status": "pending_initial_baseline_review",
+                           "observed_source_fingerprints": raw.get("observed_source_fingerprints", {}).get(name, {})}
     # Only an explicit reviewer resolution closes old issues; recovery alone
     # does not erase pending legal questions.
     write_json(queue_path, queue)
