@@ -80,6 +80,31 @@ class AutomationTests(unittest.TestCase):
         result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', command], capture_output=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace'))
 
+    @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows installer integration')
+    def test_installer_replaces_file_and_rejects_bad_hash(self):
+        import hashlib
+        import os
+        import subprocess
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'target.exe'
+            staged = root / 'staged.exe'
+            status = root / 'status.json'
+            old, new = b'old harmless test file', b'new harmless test file'
+            helper = str(Path('apply_app_update.ps1').resolve())
+            for expected, outcome in [(hashlib.sha256(new).hexdigest(), 'installed'), ('0' * 64, 'failed')]:
+                target.write_bytes(old)
+                staged.write_bytes(new)
+                result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+                    '-File', helper, '-ParentPid', str(os.getpid()), '-Target', str(target), '-Staged', str(staged),
+                    '-ExpectedHash', expected, '-StatusFile', str(status)], capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
+                report = json.loads(status.read_text(encoding='utf-8-sig'))
+                self.assertEqual(report['state'], outcome, report)
+                self.assertEqual(target.read_bytes(), new if outcome == 'installed' else old)
+                if outcome == 'installed':
+                    self.assertEqual(Path(str(target) + '.backup').read_bytes(), old)
+
     def test_first_observation_is_not_claimed_as_verified_no_change(self):
         import os
         import knowledge_update as knowledge

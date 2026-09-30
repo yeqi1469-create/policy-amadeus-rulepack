@@ -10,6 +10,16 @@ $ErrorActionPreference = 'Stop'
 $backup = "$Target.backup"
 $deadline = (Get-Date).AddHours(12)
 $replacementStarted = $false
+function Get-UpdateHash([string]$Path) {
+    $inputStream = [System.IO.File]::OpenRead($Path)
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return [System.BitConverter]::ToString($algorithm.ComputeHash($inputStream)).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $algorithm.Dispose()
+        $inputStream.Dispose()
+    }
+}
 try {
     while ((Get-Date) -lt $deadline) {
         $running = Get-CimInstance Win32_Process -Filter "name = 'Policy Amadeus.exe'" |
@@ -19,13 +29,13 @@ try {
     }
     if ($running) { throw 'Application is still running; retry on the next update check' }
     if (-not (Test-Path -LiteralPath $Staged)) { throw 'Staged application is missing' }
-    if ((Get-FileHash -LiteralPath $Staged -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedHash) {
+    if ((Get-UpdateHash $Staged) -ne $ExpectedHash) {
         throw 'Staged application hash does not match the signed manifest'
     }
     Copy-Item -LiteralPath $Target -Destination $backup -Force
     $replacementStarted = $true
     Copy-Item -LiteralPath $Staged -Destination $Target -Force
-    if ((Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedHash) {
+    if ((Get-UpdateHash $Target) -ne $ExpectedHash) {
         Copy-Item -LiteralPath $backup -Destination $Target -Force
         throw 'Installed application hash mismatch; restored the backup'
     }
