@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-09-30T09:39:29.145761+00:00",
+  "checked_at": "2026-09-30T09:49:57.666405+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -19,207 +19,206 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145493+00:00"
+      "checked_at": "2026-09-30T09:49:57.666076+00:00"
     },
     "United Kingdom": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145515+00:00"
+      "checked_at": "2026-09-30T09:49:57.666099+00:00"
     },
     "France": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145522+00:00"
+      "checked_at": "2026-09-30T09:49:57.666109+00:00"
     },
     "Italy": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145527+00:00"
+      "checked_at": "2026-09-30T09:49:57.666116+00:00"
     },
     "Russia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145532+00:00"
+      "checked_at": "2026-09-30T09:49:57.666123+00:00"
     },
     "Spain": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145537+00:00"
+      "checked_at": "2026-09-30T09:49:57.666129+00:00"
     },
     "Turkey": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145542+00:00"
+      "checked_at": "2026-09-30T09:49:57.666136+00:00"
     },
     "Netherlands": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145547+00:00"
+      "checked_at": "2026-09-30T09:49:57.666142+00:00"
     },
     "Switzerland": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145553+00:00"
+      "checked_at": "2026-09-30T09:49:57.666149+00:00"
     },
     "Poland": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145558+00:00"
+      "checked_at": "2026-09-30T09:49:57.666155+00:00"
     },
     "Belgium": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145563+00:00"
+      "checked_at": "2026-09-30T09:49:57.666161+00:00"
     },
     "Sweden": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145568+00:00"
+      "checked_at": "2026-09-30T09:49:57.666167+00:00"
     },
     "Austria": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145573+00:00"
+      "checked_at": "2026-09-30T09:49:57.666173+00:00"
     },
     "Norway": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145577+00:00"
+      "checked_at": "2026-09-30T09:49:57.666179+00:00"
     },
     "Denmark": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145582+00:00"
+      "checked_at": "2026-09-30T09:49:57.666185+00:00"
     },
     "Ireland": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145587+00:00"
+      "checked_at": "2026-09-30T09:49:57.666191+00:00"
     },
     "Finland": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145592+00:00"
+      "checked_at": "2026-09-30T09:49:57.666197+00:00"
     },
     "Romania": {
       "status": "temporarily_unreachable",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145596+00:00"
+      "checked_at": "2026-09-30T09:49:57.666202+00:00"
     },
     "Czechia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145601+00:00"
+      "checked_at": "2026-09-30T09:49:57.666208+00:00"
     },
     "Portugal": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145606+00:00"
+      "checked_at": "2026-09-30T09:49:57.666214+00:00"
     },
     "Greece": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145612+00:00"
+      "checked_at": "2026-09-30T09:49:57.666220+00:00"
     },
     "Hungary": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145617+00:00"
+      "checked_at": "2026-09-30T09:49:57.666226+00:00"
     },
     "Ukraine": {
       "status": "source_changed",
       "official_sources_reached": [
         "https://zakon.rada.gov.ua/go/1023-12",
-        "https://zakon.rada.gov.ua/laws/show/1023-12",
-        "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119"
+        "https://zakon.rada.gov.ua/laws/show/1023-12"
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145623+00:00"
+      "checked_at": "2026-09-30T09:49:57.666233+00:00"
     },
     "Slovakia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145627+00:00"
+      "checked_at": "2026-09-30T09:49:57.666240+00:00"
     },
     "Bulgaria": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145632+00:00"
+      "checked_at": "2026-09-30T09:49:57.666246+00:00"
     },
     "Croatia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145637+00:00"
+      "checked_at": "2026-09-30T09:49:57.666252+00:00"
     },
     "Serbia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145642+00:00"
+      "checked_at": "2026-09-30T09:49:57.666259+00:00"
     },
     "Lithuania": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145647+00:00"
+      "checked_at": "2026-09-30T09:49:57.666265+00:00"
     },
     "Slovenia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145652+00:00"
+      "checked_at": "2026-09-30T09:49:57.666271+00:00"
     },
     "Latvia": {
       "status": "source_changed",
@@ -228,49 +227,49 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145657+00:00"
+      "checked_at": "2026-09-30T09:49:57.666278+00:00"
     },
     "Estonia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145661+00:00"
+      "checked_at": "2026-09-30T09:49:57.666284+00:00"
     },
     "Cyprus": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145666+00:00"
+      "checked_at": "2026-09-30T09:49:57.666290+00:00"
     },
     "Iceland": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145671+00:00"
+      "checked_at": "2026-09-30T09:49:57.666297+00:00"
     },
     "Bosnia and Herzegovina": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145676+00:00"
+      "checked_at": "2026-09-30T09:49:57.666303+00:00"
     },
     "Albania": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145682+00:00"
+      "checked_at": "2026-09-30T09:49:57.666309+00:00"
     },
     "North Macedonia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145687+00:00"
+      "checked_at": "2026-09-30T09:49:57.666316+00:00"
     },
     "Moldova": {
       "status": "source_changed",
@@ -279,98 +278,98 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145692+00:00"
+      "checked_at": "2026-09-30T09:49:57.666321+00:00"
     },
     "Georgia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145697+00:00"
+      "checked_at": "2026-09-30T09:49:57.666327+00:00"
     },
     "Armenia": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145702+00:00"
+      "checked_at": "2026-09-30T09:49:57.666334+00:00"
     },
     "Belarus": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145707+00:00"
+      "checked_at": "2026-09-30T09:49:57.666340+00:00"
     },
     "Azerbaijan": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145712+00:00"
+      "checked_at": "2026-09-30T09:49:57.666346+00:00"
     },
     "Montenegro": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145716+00:00"
+      "checked_at": "2026-09-30T09:49:57.666352+00:00"
     },
     "Luxembourg": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145721+00:00"
+      "checked_at": "2026-09-30T09:49:57.666357+00:00"
     },
     "Malta": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145727+00:00"
+      "checked_at": "2026-09-30T09:49:57.666364+00:00"
     },
     "Kosovo": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145732+00:00"
+      "checked_at": "2026-09-30T09:49:57.666370+00:00"
     },
     "Liechtenstein": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145738+00:00"
+      "checked_at": "2026-09-30T09:49:57.666376+00:00"
     },
     "Monaco": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145743+00:00"
+      "checked_at": "2026-09-30T09:49:57.666382+00:00"
     },
     "Andorra": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145747+00:00"
+      "checked_at": "2026-09-30T09:49:57.666388+00:00"
     },
     "San Marino": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145752+00:00"
+      "checked_at": "2026-09-30T09:49:57.666394+00:00"
     },
     "Vatican City": {
       "status": "not_verified",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:39:29.145757+00:00"
+      "checked_at": "2026-09-30T09:49:57.666400+00:00"
     }
   },
   "rulepack_version": "2026.09.30-1",
@@ -378,25 +377,25 @@
     "state": "cloud_source_run"
   },
   "mode": "full",
-  "last_full_checked_at": "2026-09-30T09:39:29.145766+00:00",
+  "last_full_checked_at": "2026-09-30T09:49:57.666411+00:00",
   "observed_source_fingerprints": {
-    "EU GDPR obligations": {
-      "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
-    },
     "EU Sale of Goods Directive": {
       "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
     "EU Consumer Rights Directive": {
       "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
+    "EU GDPR obligations": {
+      "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
+    },
     "UK distance selling": {
       "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
     },
     "Swiss ecommerce obligations": {
-      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402",
+      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
       "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
       "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722",
-      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e"
+      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402"
     },
     "Country — Latvia": {
       "https://likumi.lv/ta/id/23309": "0c84ddde0dbd28c09b4a91ae69a54e95d2dd7f68fd068d2a83c81178ffb78080"
@@ -406,8 +405,7 @@
     },
     "Country — Ukraine": {
       "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
-      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
-      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "eba7232c9594cf3156f78fb2a3638b4d8eb633f41cde8c4c5c982e64ff00c65e"
+      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
     }
   },
   "reviewed_resolutions": []
