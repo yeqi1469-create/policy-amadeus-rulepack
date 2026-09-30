@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-09-30T09:23:17.130518+00:00",
+  "checked_at": "2026-09-30T09:39:29.145761+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -9,6 +9,7 @@
   ],
   "unreachable": [
     "Country — Romania",
+    "Turkey distance contracts",
     "Germany BGB",
     "Country — Germany"
   ],
@@ -18,7 +19,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:23:17.130079+00:00"
+      "checked_at": "2026-09-30T09:39:29.145493+00:00"
     },
     "United Kingdom": {
       "status": "source_fingerprint_no_change",
@@ -177,7 +178,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:23:17.130253+00:00"
+      "checked_at": "2026-09-30T09:39:29.145596+00:00"
     },
     "Czechia": {
       "status": "source_fingerprint_no_change",
@@ -224,7 +225,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:23:17.130292+00:00"
+      "checked_at": "2026-09-30T09:39:29.145623+00:00"
     },
     "Slovakia": {
       "status": "source_fingerprint_no_change",
@@ -288,7 +289,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:23:17.130350+00:00"
+      "checked_at": "2026-09-30T09:39:29.145657+00:00"
     },
     "Estonia": {
       "status": "source_fingerprint_no_change",
@@ -355,7 +356,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-09-30T09:23:17.130406+00:00"
+      "checked_at": "2026-09-30T09:39:29.145692+00:00"
     },
     "Georgia": {
       "status": "source_fingerprint_no_change",
@@ -489,35 +490,25 @@
     "state": "cloud_source_run"
   },
   "mode": "incremental",
-  "last_full_checked_at": "2026-09-30T09:23:17.130525+00:00",
+  "last_full_checked_at": "2026-09-30T09:39:29.145766+00:00",
   "observed_source_fingerprints": {
-    "UK distance selling": {
-      "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
-    },
     "EU GDPR obligations": {
       "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
-    },
-    "EU Consumer Rights Directive": {
-      "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
     "EU Sale of Goods Directive": {
       "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
-    "Country — Austria": {
-      "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350": "d18c659f4b61dd69cae8b10876b9879f2c34aa481f41a2872d430ca727913b4d"
+    "EU Consumer Rights Directive": {
+      "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
+    },
+    "UK distance selling": {
+      "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
     },
     "Swiss ecommerce obligations": {
-      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
       "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402",
+      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
       "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722",
-      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de"
-    },
-    "Country — Finland": {
-      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0",
-      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0"
-    },
-    "Turkey distance contracts": {
-      "https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme": "f0017a5ee78cc75f8ad40fce889e99bee781f5c167f78a1f25f926d45c63e2f1"
+      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e"
     },
     "Country — Latvia": {
       "https://likumi.lv/ta/id/23309": "0c84ddde0dbd28c09b4a91ae69a54e95d2dd7f68fd068d2a83c81178ffb78080"
@@ -526,19 +517,11 @@
       "https://consumator.gov.md/en/node/575": "9190c7623d74ee06e801e83f9dceb2e00b69c56a9b51fa8a7ea442c22b2e63b6"
     },
     "Country — Ukraine": {
+      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
       "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
-      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab",
-      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
-    },
-    "Country — Luxembourg": {
-      "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html": "b7b6c278a41a1000eb02087de2d05b37a96760a68360c055a009131621c326ef",
-      "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "9e416439b5227c9ce99171cb5109765fb3c035d4ad8a5ea7e9ec7b19d1f7f053"
+      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "eba7232c9594cf3156f78fb2a3638b4d8eb633f41cde8c4c5c982e64ff00c65e"
     }
   },
-  "reviewed_resolutions": [
-    "Country — Austria",
-    "Country — Finland",
-    "Country — Luxembourg"
-  ],
+  "reviewed_resolutions": [],
   "last_full_date": "2026-09-30"
 }
