@@ -108,8 +108,15 @@ def check() -> dict:
             queue[name] = {"first_seen": raw["checked_at"], "last_seen": raw["checked_at"],
                            "status": "pending_initial_baseline_review",
                            "observed_source_fingerprints": raw.get("observed_source_fingerprints", {}).get(name, {})}
-    # Only an explicit reviewer resolution closes old issues; recovery alone
-    # does not erase pending legal questions.
+    # Close only findings whose observed document digests match explicit
+    # approvals in the signed rules. Other legal questions remain pending.
+    pack = knowledge.load_rulepack()
+    for name, entry in queue.items():
+        observed = raw.get("observed_source_fingerprints", {}).get(name, {})
+        approved = pack.get("reviewed_source_fingerprints", {}).get(name, {})
+        if name in raw.get("reviewed_resolutions", []):
+            entry.update(status="resolved_by_reviewed_rulepack", resolved_at=raw["checked_at"],
+                         rulepack_version=pack["rulepack_version"])
     write_json(queue_path, queue)
     audit = {"checked_at": raw["checked_at"], "mode": raw["mode"],
              "changed": raw["changed"], "unreachable": raw["unreachable"],
@@ -122,7 +129,7 @@ def check() -> dict:
 def release_needed() -> bool:
     paths = ["legal_rulepack.json", "app_version.json", "policy_generator.py", "policy_validator.py",
              "policy_studio.py", "policy_entry.py", "app_updater.py", "knowledge_update.py",
-             "rulepack_manager.py", "update_storage.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
+             "rulepack_manager.py", "update_storage.py", "official_document.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
     digest = hashlib.sha256()
     for name in paths:
         digest.update(name.encode())

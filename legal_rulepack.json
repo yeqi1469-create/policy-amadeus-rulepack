@@ -1,9 +1,29 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.09.29-1",
+  "rulepack_version": "2026.09.30-1",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
+  "reviewed_source_fingerprints": {
+    "Country — Austria": {
+      "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350": "d18c659f4b61dd69cae8b10876b9879f2c34aa481f41a2872d430ca727913b4d"
+    },
+    "Country — Finland": {
+      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0",
+      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0"
+    },
+    "Country — Luxembourg": {
+      "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "9e416439b5227c9ce99171cb5109765fb3c035d4ad8a5ea7e9ec7b19d1f7f053"
+    }
+  },
+  "source_detection_review": {
+    "reviewed_on": "2026-09-30",
+    "scope": "Detection-body extraction, not a blanket national legal review",
+    "Austria": "RIS documentContent excludes daily paragraph navigation; the known future FAGG section 13a remains scheduled for 1 October in Europe/Vienna.",
+    "Finland": "Resolve Finnish akomaNtoso statute children from React Flight; omit deployment and sidebar data. Published 573/2026 and future 835/2026 are already recorded in the rulepack.",
+    "Luxembourg": "Guichet's observed differences are office open/closed state and weekday ordering inside cmp-hours; these contact widgets are excluded while consumer guidance is retained.",
+    "Belarus": "ETALON's H11000262 response has data-length=0 and an empty doc-content-outline-root. Reject the shell as unavailable; retain all prior cache entries and continue official alternates."
+  },
   "legal_versions": {
     "EU Consumer Rights Directive": "2026-09-27",
     "EU Sale of Goods Directive": "2026-07-31",
@@ -19,11 +39,13 @@
   "future_legal_versions": {
     "Austrian FAGG electronic withdrawal function": {
       "effective_on": "2026-10-01",
+      "effective_timezone": "Europe/Vienna",
       "version": "FAGG section 13a, BGBl. I Nr. 59/2026 (effective 2026-10-01)",
       "official_source": "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P13a/NOR40279256"
     },
     "Finnish deferred-payment identity verification": {
       "effective_on": "2026-10-01",
+      "effective_timezone": "Europe/Helsinki",
       "version": "Consumer Protection Act chapter 6 section 12c, Law 835/2026 (effective 2026-10-01)",
       "official_source": "https://www.finlex.fi/fi/lainsaadanto/saadoskokoelma/2026/835",
       "scope_note": "Conditional on offering a deferred-payment method; not a change to shipping, withdrawal or refund deadlines."

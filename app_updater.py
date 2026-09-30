@@ -147,6 +147,12 @@ def _stage_app_update() -> dict[str, object]:
 
 def run_auto_update() -> dict[str, object]:
     result: dict[str, object] = {}
+    # Fetch the small signed release first. Slow government sites must not
+    # postpone checking whether a corrected application is already published.
+    try:
+        result.update(_stage_app_update())
+    except Exception as exc:
+        result.update({"app": "failed", "app_error": str(exc)})
     try:
         from knowledge_update import run_startup_check
 
@@ -160,10 +166,6 @@ def run_auto_update() -> dict[str, object]:
         result["knowledge"] = run_startup_check(incremental=incremental)
     except Exception as exc:
         result["knowledge"] = {"state": "failed", "message": str(exc)}
-    try:
-        result.update(_stage_app_update())
-    except Exception as exc:
-        result.update({"app": "failed", "app_error": str(exc)})
     return _record(result)
 
 

@@ -36,7 +36,6 @@ def _scheduled_legal_versions(rulepack: dict[str, object], today: date | None = 
     before the law actually applies. On the effective date this function
     makes the pending version reviewable by the normal startup gate.
     """
-    today = today or date.today()
     scheduled = rulepack.get("future_legal_versions", {})
     if not isinstance(scheduled, dict):
         return {}
@@ -49,7 +48,13 @@ def _scheduled_legal_versions(rulepack: dict[str, object], today: date | None = 
         except ValueError:
             continue
         version = str(details.get("version", "")).strip()
-        if version and today >= effective_on:
+        if today is None and details.get("effective_timezone"):
+            from datetime import timezone
+            from zoneinfo import ZoneInfo
+            country_today = datetime.now(timezone.utc).astimezone(ZoneInfo(str(details["effective_timezone"]))).date()
+        else:
+            country_today = today or date.today()
+        if version and country_today >= effective_on:
             effective[str(name)] = version
     return effective
 
@@ -543,7 +548,9 @@ def _fingerprint(url: str) -> str:
         normalized_input = response.text
     # Hash only normalized legal-body text. This is stronger than
     # Last-Modified, which many government sites omit or change for templates.
-    normalized = _normalized_legal_text(normalized_input)
+    from official_document import extract_official_document
+    extracted = None if is_pdf else extract_official_document(normalized_input, url)
+    normalized = ' '.join(extracted.split()) if extracted is not None else _normalized_legal_text(normalized_input)
     # A successful HTTP status is not proof that the legal document was
     # returned. EUR-Lex and other government sites can temporarily return an
     # empty/bot/interstitial page. Never store such a response as a baseline;
@@ -714,6 +721,7 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
         report = {
             "checked_at": datetime.now().astimezone().isoformat(),
             "state": state,
+            "message": message,
             "changed": changed,
             "unreachable": unreachable,
             "countries": coverage,
@@ -722,6 +730,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
             "mode": "incremental" if incremental else "full",
             "last_full_checked_at": previous_report.get("last_full_checked_at", previous_report.get("checked_at")) if incremental else datetime.now().astimezone().isoformat(),
             "observed_source_fingerprints": current,
+            "reviewed_resolutions": [name for name, endpoints in current.items() if name not in changed
+                and any(reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {}).get(url) == digest
+                        for url, digest in endpoints.items())],
         }
         report_error = ""
         try:
@@ -729,7 +740,7 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
         except OSError as exc:
             report_error = str(exc)
         with _LOCK:
-            _STATUS = {"state": state, "message": message, "changed": changed,
+            _STATUS = {"state": state, "message": message, "changed": changed, "checked_at": report["checked_at"],
                        "unreachable": unreachable, "report_error": report_error}
     finally:
         _READY.set()
@@ -743,6 +754,17 @@ def start_startup_check() -> None:
 def get_status(wait_seconds: float = 0) -> dict[str, object]:
     if wait_seconds:
         _READY.wait(wait_seconds)
+    # A scheduled updater can resolve a finding while this GUI is still open.
+    # Adopt only a newer completed report using the currently active rulepack.
+    # This changes no baseline and performs no network request on the UI thread.
+    try:
+        report = json.loads((_cache_path().parent / "knowledge_coverage_latest.json").read_text(encoding="utf-8"))
+        if report.get("message") and report.get("rulepack_version") == load_rulepack()["rulepack_version"]:
+            with _LOCK:
+                if _STATUS.get("state") != "checking" and datetime.fromisoformat(report["checked_at"]) > datetime.fromisoformat(str(_STATUS.get("checked_at", "1970-01-01T00:00:00+00:00"))):
+                    _STATUS.update({key: report[key] for key in ("state", "message", "changed", "unreachable", "checked_at")})
+    except (OSError, ValueError, KeyError, RuntimeError):
+        pass
     with _LOCK:
         return dict(_STATUS)
 

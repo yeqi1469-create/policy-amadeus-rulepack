@@ -76,6 +76,33 @@ class AutomationTests(unittest.TestCase):
             self.assertEqual(coverage["countries"]["Germany"]["status"], "baseline_requires_review")
             self.assertFalse(coverage["countries"]["Germany"]["full_national_legal_review_completed"])
 
+    def test_open_gui_adopts_newer_completed_background_report(self):
+        import os
+        import knowledge_update as knowledge
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"LOCALAPPDATA": directory}):
+            report = {"checked_at": "2026-09-30T12:00:00+08:00", "state": "partial", "message": "Reviewed update applied",
+                      "changed": [], "unreachable": ["Country — Iceland"], "rulepack_version": self.pack["rulepack_version"]}
+            write_json(knowledge._cache_path().parent / "knowledge_coverage_latest.json", report)
+            with patch.dict(knowledge._STATUS, {"checked_at": "2026-09-30T11:00:00+08:00", "state": "review_required", "changed": ["Country — Austria"]}, clear=True), patch("knowledge_update.load_rulepack", return_value=self.pack):
+                self.assertEqual(knowledge.get_status()["changed"], [])
+                self.assertEqual(knowledge.get_status()["state"], "partial")
+
+    def test_app_release_check_precedes_slow_government_scan(self):
+        from app_updater import run_auto_update
+        order = []
+        with patch("app_updater._stage_app_update", side_effect=lambda: order.append("app") or {"app": "current"}), patch("knowledge_update.run_startup_check", side_effect=lambda **kwargs: order.append("knowledge") or {}), patch("app_updater._record", side_effect=lambda result: result):
+            run_auto_update()
+        self.assertEqual(order, ["app", "knowledge"])
+
+    def test_scheduled_gate_uses_each_country_calendar(self):
+        from datetime import datetime, timezone
+        from knowledge_update import _scheduled_legal_versions
+        with patch("knowledge_update.datetime") as clock:
+            clock.now.return_value = datetime(2026, 9, 30, 21, 30, tzinfo=timezone.utc)
+            versions = _scheduled_legal_versions(self.pack)
+        self.assertNotIn("Austrian FAGG electronic withdrawal function", versions)
+        self.assertIn("Finnish deferred-payment identity verification", versions)
+
     def test_signed_exact_review_does_not_clear_other_changes(self):
         import os
         import knowledge_update as knowledge

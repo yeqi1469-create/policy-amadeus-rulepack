@@ -175,8 +175,7 @@ class PolicyStudio(tk.Tk):
     def _poll_knowledge_check(self) -> None:
         status = get_status()
         self.knowledge_status.set(str(status.get("message", "正在检查政策知识库更新……")))
-        if status.get("state") == "checking":
-            self.after(300, self._poll_knowledge_check)
+        self.after(300 if status.get("state") == "checking" else 5000, self._poll_knowledge_check)
 
     def _apply_windows_icons(self) -> None:
         """Force native small/large icons so Windows cannot reuse a stale taskbar bitmap."""
