@@ -59,7 +59,7 @@
       "https://api.sejm.gov.pl/eli/acts/DU/2024/1796/text.html": "026733f66c95e6a4ca5c810b1fe0a8445cffae54f9faf093766e136483490a76"
     },
     "Country — Austria": {
-      "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350": "2f301540c6dfd08dfa093b2924fddda3a194f2232924e649e427cc37a94e39e3"
+      "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350": "d18c659f4b61dd69cae8b10876b9879f2c34aa481f41a2872d430ca727913b4d"
     },
     "Country — Norway": {
       "https://lovdata.no/dokument/NL/lov/2014-06-20-27": "17e1400b067c54269d1e7eaf3533eb2a4dbdb75dcc9c8fb03e223f0e872c8efc"
@@ -75,8 +75,8 @@
       "https://www.retsinformation.dk/eli/lta/2025/1184/pdf": "5d063bc53809248a7c8ad40896de748724a3bdfb05c69be5553bfe02780d20a1"
     },
     "Country — Finland": {
-      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "356536a63126842481210e249b8e91f2e9ec8d3ebdedeebe5dee32c756b463a1",
-      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "356536a63126842481210e249b8e91f2e9ec8d3ebdedeebe5dee32c756b463a1"
+      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0",
+      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0"
     },
     "Country — Netherlands": {
       "https://wetten.overheid.nl/BWBR0005289/": "938469ad3397ade69e521abc18c1c52c570b570103b5138ceec5a4ec85f4e415"
@@ -162,7 +162,7 @@
     },
     "Country — Luxembourg": {
       "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html": "b7b6c278a41a1000eb02087de2d05b37a96760a68360c055a009131621c326ef",
-      "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "09aca598235559e6fa1ec264458ead57fefab5d0ae779ada42e19142a87a922d"
+      "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "9e416439b5227c9ce99171cb5109765fb3c035d4ad8a5ea7e9ec7b19d1f7f053"
     },
     "Country — Malta": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "71c8e79c202f4ecbd1eb1dbb64c2699ec20da450f5967f94e12e9e0c8b9ac9f1"

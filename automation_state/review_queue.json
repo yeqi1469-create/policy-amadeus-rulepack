@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -19,34 +19,42 @@
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Country — Austria": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
     "last_seen": "2026-09-30T06:12:21.285819+00:00",
-    "status": "retry_official_source",
-    "observed_source_fingerprints": {}
+    "status": "resolved_by_reviewed_rulepack",
+    "observed_source_fingerprints": {},
+    "resolved_at": "2026-09-30T09:23:17.130518+00:00",
+    "rulepack_version": "2026.09.30-1"
   },
   "Country — Finland": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
     "last_seen": "2026-09-30T06:12:21.285819+00:00",
-    "status": "pending_legal_review",
+    "status": "resolved_by_reviewed_rulepack",
     "observed_source_fingerprints": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "1892a133c0ea4be7c0ccca60b8f983afed56bf4db320d4d79bbff756d489b497",
       "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "1892a133c0ea4be7c0ccca60b8f983afed56bf4db320d4d79bbff756d489b497"
-    }
+    },
+    "resolved_at": "2026-09-30T09:23:17.130518+00:00",
+    "rulepack_version": "2026.09.30-1"
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
-    "status": "retry_official_source",
-    "observed_source_fingerprints": {}
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
+    "status": "pending_legal_review",
+    "observed_source_fingerprints": {
+      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
+      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab",
+      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
+    }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "0c84ddde0dbd28c09b4a91ae69a54e95d2dd7f68fd068d2a83c81178ffb78080"
@@ -54,7 +62,7 @@
   },
   "Country — Moldova": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://consumator.gov.md/en/node/575": "9190c7623d74ee06e801e83f9dceb2e00b69c56a9b51fa8a7ea442c22b2e63b6"
@@ -63,15 +71,17 @@
   "Country — Luxembourg": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
     "last_seen": "2026-09-30T06:12:21.285819+00:00",
-    "status": "pending_legal_review",
+    "status": "resolved_by_reviewed_rulepack",
     "observed_source_fingerprints": {
       "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html": "b7b6c278a41a1000eb02087de2d05b37a96760a68360c055a009131621c326ef",
       "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "7ae7c7e014fe1278314e468dbff9b6d7db7e4ec01605a4e31e773e3a64644886"
-    }
+    },
+    "resolved_at": "2026-09-30T09:23:17.130518+00:00",
+    "rulepack_version": "2026.09.30-1"
   },
   "Country — Germany": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-09-30T06:12:21.285819+00:00",
+    "last_seen": "2026-09-30T09:23:17.130518+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   }
