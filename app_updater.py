@@ -99,9 +99,30 @@ def _already_staged(version: str, digest: str) -> bool:
         pending = json.loads((_data_dir() / "pending_app_update.json").read_text(encoding="utf-8"))
         age = datetime.now().timestamp() - float(pending["created_at"])
         return (pending["version"] == version and pending["sha256"] == digest
-                and 0 <= age < 12 * 3600 and Path(pending["staged"]).is_file())
+                and 0 <= age < 12 * 3600 and Path(pending["staged"]).is_file()
+                and _helper_alive(int(pending.get("helper_pid", 0))))
     except (OSError, ValueError, KeyError, TypeError):
         return False
+
+
+def _helper_alive(pid: int) -> bool:
+    if pid <= 0 or sys.platform != 'win32':
+        return False
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel.OpenProcess(0x1000, False, pid)
+    if not handle:
+        return False
+    try:
+        code = wintypes.DWORD()
+        return bool(kernel.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == 259
+    finally:
+        kernel.CloseHandle(handle)
 
 
 def _stage_app_update() -> dict[str, object]:
@@ -128,14 +149,22 @@ def _stage_app_update() -> dict[str, object]:
     helper = _data_dir() / "apply_app_update.ps1"
     shutil.copyfile(_resource("apply_app_update.ps1"), helper)
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    installer_log = _data_dir() / 'app_install_helper.log'
     try:
-        process = subprocess.Popen(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-             "-WindowStyle", "Hidden", "-File", str(helper), "-ParentPid", str(os.getpid()),
-             "-Target", str(Path(sys.executable).resolve()), "-Staged", str(staged),
-             "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json")],
-            creationflags=flags,
-        )
+        with installer_log.open('ab') as log:
+            process = subprocess.Popen(
+                ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                 "-WindowStyle", "Hidden", "-File", str(helper), "-ParentPid", str(os.getpid()),
+                 "-Target", str(Path(sys.executable).resolve()), "-Staged", str(staged),
+                 "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json")],
+                creationflags=flags, stdout=log, stderr=subprocess.STDOUT,
+            )
+        try:
+            exit_code = process.wait(timeout=0.5)
+        except subprocess.TimeoutExpired:
+            exit_code = None
+        if exit_code is not None:
+            raise RuntimeError(f'自动安装助手提前退出（代码 {exit_code}）；详情已保存到 app_install_helper.log')
         from update_storage import write_json
         write_json(_data_dir() / "pending_app_update.json", {"version": version, "sha256": digest,
                    "staged": str(staged), "created_at": datetime.now().timestamp(), "helper_pid": process.pid})

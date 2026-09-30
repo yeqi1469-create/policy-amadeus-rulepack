@@ -17,17 +17,17 @@ try {
         if (-not $running) { break }
         Start-Sleep -Seconds 10
     }
-    if ($running) { throw '程序仍在运行，更新将在下次检查时重试' }
-    if (-not (Test-Path -LiteralPath $Staged)) { throw '待安装程序不存在' }
+    if ($running) { throw 'Application is still running; retry on the next update check' }
+    if (-not (Test-Path -LiteralPath $Staged)) { throw 'Staged application is missing' }
     if ((Get-FileHash -LiteralPath $Staged -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedHash) {
-        throw '待安装程序哈希不匹配'
+        throw 'Staged application hash does not match the signed manifest'
     }
     Copy-Item -LiteralPath $Target -Destination $backup -Force
     $replacementStarted = $true
     Copy-Item -LiteralPath $Staged -Destination $Target -Force
     if ((Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedHash) {
         Copy-Item -LiteralPath $backup -Destination $Target -Force
-        throw '安装后校验失败，已回滚'
+        throw 'Installed application hash mismatch; restored the backup'
     }
     @{ state = 'installed'; installed_at = (Get-Date).ToString('o') } |
         ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8

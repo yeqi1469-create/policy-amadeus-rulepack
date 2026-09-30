@@ -62,9 +62,23 @@ class AutomationTests(unittest.TestCase):
             staged = root / "staged.exe"
             staged.write_bytes(b"MZ")
             write_json(root / "pending_app_update.json", {"version": "new", "sha256": "a" * 64,
-                       "staged": str(staged), "created_at": datetime.now().timestamp()})
-            self.assertTrue(_already_staged("new", "a" * 64))
-            self.assertFalse(_already_staged("different", "a" * 64))
+                       "staged": str(staged), "created_at": datetime.now().timestamp(), "helper_pid": 123})
+            with patch('app_updater._helper_alive', return_value=True):
+                self.assertTrue(_already_staged("new", "a" * 64))
+                self.assertFalse(_already_staged("different", "a" * 64))
+            with patch('app_updater._helper_alive', return_value=False):
+                self.assertFalse(_already_staged("new", "a" * 64))
+
+    @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows PowerShell compatibility')
+    def test_windows_powershell_can_parse_installer(self):
+        import subprocess
+        helper = str(Path('apply_app_update.ps1').resolve()).replace("'", "''")
+        # Windows PowerShell 5.1 reads BOM-less scripts through the local code
+        # page. ASCII prevents Chinese string bytes from becoming quote tokens.
+        Path('apply_app_update.ps1').read_bytes().decode('ascii')
+        command = "$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile('" + helper + "',[ref]$tokens,[ref]$errors) | Out-Null; if ($errors.Count) { $errors | Out-String | Write-Output; exit 1 }"
+        result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', command], capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace'))
 
     def test_first_observation_is_not_claimed_as_verified_no_change(self):
         import os
