@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-03T17:20:13.837260+00:00",
+    "last_seen": "2026-10-03T21:23:44.866614+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -19,7 +19,7 @@
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-03T17:20:13.837260+00:00",
+    "last_seen": "2026-10-03T21:23:44.866614+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -54,15 +54,15 @@
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-03T17:20:13.837260+00:00",
+    "last_seen": "2026-10-03T21:23:44.866614+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://likumi.lv/ta/id/23309": "cb70a3e0d7dae877b0156062c4fb548cbb5d58931eb1db181eaa7dc3660c2a04"
+      "https://likumi.lv/ta/id/23309": "10a83cc59ffc30abf8b363e2394c2dcf67a73765209238e2fb7173d339327695"
     }
   },
   "Country — Moldova": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-03T17:20:13.837260+00:00",
+    "last_seen": "2026-10-03T21:23:44.866614+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://consumator.gov.md/en/node/575": "299f620b470b47d8997ae6e65785ab49ea5a4acc6c55339a438b02e46a66af33"
@@ -87,7 +87,7 @@
   },
   "Country — Malta": {
     "first_seen": "2026-10-02T01:45:07.275480+00:00",
-    "last_seen": "2026-10-03T17:20:13.837260+00:00",
+    "last_seen": "2026-10-03T21:23:44.866614+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
