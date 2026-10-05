@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -13,13 +13,13 @@
   },
   "Turkey distance contracts": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -44,16 +44,16 @@
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
-      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
+      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
+      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "10a83cc59ffc30abf8b363e2394c2dcf67a73765209238e2fb7173d339327695"
@@ -61,7 +61,7 @@
   },
   "Country — Moldova": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://consumator.gov.md/en/node/575": "299f620b470b47d8997ae6e65785ab49ea5a4acc6c55339a438b02e46a66af33"
@@ -80,13 +80,13 @@
   },
   "Country — Germany": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Country — Malta": {
     "first_seen": "2026-10-02T01:45:07.275480+00:00",
-    "last_seen": "2026-10-05T01:03:20.284150+00:00",
+    "last_seen": "2026-10-05T01:54:21.724084+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
