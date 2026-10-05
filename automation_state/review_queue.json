@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-05T03:25:48.564175+00:00",
+    "last_seen": "2026-10-05T03:33:45.923531+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -19,7 +19,7 @@
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-05T03:18:58.138436+00:00",
+    "last_seen": "2026-10-05T03:33:45.923531+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -44,17 +44,16 @@
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T03:25:48.564175+00:00",
+    "last_seen": "2026-10-05T03:33:45.923531+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab",
-      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
-      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
+      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-05T03:25:48.564175+00:00",
+    "last_seen": "2026-10-05T03:33:45.923531+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "10a83cc59ffc30abf8b363e2394c2dcf67a73765209238e2fb7173d339327695"

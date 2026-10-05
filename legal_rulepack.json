@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.10.05-1",
+  "rulepack_version": "2026.10.05-2",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
@@ -20,6 +20,9 @@
     },
     "Country — Malta": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
+    },
+    "EU Consumer Rights Directive": {
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02011L0083-20260927": "dced9f392f49d2f08234176fdd91a9b9e5a787745c5c835c485546507eb95cf9"
     }
   },
   "source_detection_review": {
@@ -220,5 +223,24 @@
       "Austrian FAGG electronic withdrawal function",
       "Finnish deferred-payment identity verification"
     ]
-  }
+  },
+  "codex_review_history": [
+    {
+      "id": "98c5989194ccec3e00cb37577bb8ef35b981ab8010955e3bd720089d1cbc4c6b",
+      "source": "EU Consumer Rights Directive",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02011L0083-20260927",
+      "sha256": "dced9f392f49d2f08234176fdd91a9b9e5a787745c5c835c485546507eb95cf9",
+      "classification": "metadata_only",
+      "reason": "The stored old HTML representation and current EUR-Lex portal document contain the same Directive 2011/83/EU consolidation: 02011L0083, dated 27.09.2026, revision 003.001, with amendments M1–M4. Both supply the full relevant ecommerce provisions and annexes, including identical information, withdrawal-function, withdrawal, refund and delivery requirements. Differences are portal navigation, formatting and document metadata; no substantive legal change is shown. The alternate old representation is equivalent for this comparison, though it is not the exact old portal response. new_url equals url, so no endpoint replacement is proposed. This does not establish blanket rulepack compliance or approve a hash.",
+      "quotes": [
+        "02011L0083 — EN — 27.09.2026 — 003.001",
+        "This text is meant purely as a documentation tool and has no legal effect.",
+        "Save where the exceptions provided for in Article 16 apply, the consumer shall have a period of 14 days to withdraw from a distance or off-premises contract, without giving any reason, and without incurring any costs other than those provided for in Article 13(2) and Article 14.",
+        "For distance contracts concluded by the means of an online interface, the trader shall ensure that the consumer can also withdraw from the contract by using a withdrawal function."
+      ],
+      "second_review_reason": "The supplied full old/current legal texts, including annexes, show no substantive change; differences are EUR-Lex presentation and navigation. The rulepack already records this 2026-09-27 consolidation, and no new applicable change requires a patch. Approval covers only the metadata-only classification and empty patches, not hash authenticity, equivalence to the actual historical portal response, or blanket rulepack compliance.",
+      "reviewed_at": "2026-10-05T03:33:46.504124+00:00",
+      "method": "two_local_subscription_reviews_then_cloud_tests"
+    }
+  ]
 }
