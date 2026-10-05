@@ -54,11 +54,13 @@ class CodexReviewTests(unittest.TestCase):
         self.assertFalse(worker.enabled())
 
     def test_metadata_only_approves_exact_body_without_changing_law(self):
+        original = copy.deepcopy(self.pack)
         result = worker.merge_proposal(self.pack, self.proposal)
         self.assertEqual(result["coverage_groups"], self.pack["coverage_groups"])
         self.assertEqual(result["country_overlays"], self.pack["country_overlays"])
         self.assertEqual(result["reviewed_source_fingerprints"][self.source][self.url], self.evidence["new_sha256"])
-        self.assertNotIn("codex_review_history", self.pack)
+        self.assertEqual(self.pack, original)
+        self.assertEqual(result["codex_review_history"][:-1], original.get("codex_review_history", []))
 
     def test_law_change_updates_rules_only_after_effective_date(self):
         self.law_patch()
