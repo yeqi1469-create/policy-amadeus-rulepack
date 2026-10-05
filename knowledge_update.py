@@ -13,6 +13,7 @@ from pathlib import Path
 
 from rulepack_manager import configured_manifest_url, load_rulepack, update_from_manifest
 from update_storage import write_json
+from update_progress import check_progress
 
 
 # Stable primary sources that underpin the shared European baseline and the
@@ -611,6 +612,9 @@ def _fingerprint_source(urls: tuple[str, ...]) -> dict[str, str]:
 
 def run_startup_check(incremental: bool = False) -> dict[str, object]:
     global _STATUS
+    started = time.monotonic()
+    with _LOCK:
+        _STATUS = {"state": "checking", "message": "正在检查政策知识库更新……", **check_progress(0, 0, 0), "progress_percent": 0}
     try:
         try:
             cache = json.loads(_cache_path().read_text(encoding="utf-8"))
@@ -629,6 +633,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
             incremental = False
         current: dict[str, dict[str, str]] = {}
         unreachable: list[str] = []
+        completed = 0
+        with _LOCK:
+            _STATUS.update(check_progress(0, len(selected_sources), 0))
         with ThreadPoolExecutor(max_workers=5) as pool:
             jobs = {pool.submit(_fingerprint_source, urls): name for name, urls in selected_sources.items()}
             for job in as_completed(jobs):
@@ -637,6 +644,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
                     current[name] = job.result()
                 except Exception:
                     unreachable.append(name)
+                completed += 1
+                with _LOCK:
+                    _STATUS.update(check_progress(completed, len(selected_sources), time.monotonic() - started))
         # A failed fetch is not a resolution. Carry pending document evidence
         # across full scans, incremental scans and temporary source outages.
         changed: list[str] = []
@@ -777,7 +787,7 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
             report_error = str(exc)
         with _LOCK:
             _STATUS = {"state": state, "message": message, "changed": changed, "checked_at": report["checked_at"],
-                       "unreachable": unreachable, "report_error": report_error}
+                       "unreachable": unreachable, "report_error": report_error, "progress_percent": 100, "remaining_seconds": 0}
     finally:
         _READY.set()
     from codex_review_worker import launch_if_needed

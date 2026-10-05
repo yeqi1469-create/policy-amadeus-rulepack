@@ -12,6 +12,7 @@ from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 from knowledge_update import get_status, start_startup_check
+from update_progress import progress_caption
 from policy_generator import extract_license_data, generate_translated_bundle
 
 
@@ -175,6 +176,8 @@ class PolicyStudio(tk.Tk):
     def _poll_knowledge_check(self) -> None:
         status = get_status()
         self.knowledge_status.set(str(status.get("message", "正在检查政策知识库更新……")))
+        self.progress_status = status
+        self._update_progress()
         self.after(300 if status.get("state") == "checking" else 5000, self._poll_knowledge_check)
 
     def _apply_windows_icons(self) -> None:
@@ -200,9 +203,12 @@ class PolicyStudio(tk.Tk):
         tk.Label(header, text="三步完成店铺基础资料设置", bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 10)).pack(anchor="w", pady=(5, 0))
         tk.Label(header, textvariable=self.knowledge_status, bg=PANEL, fg=ORANGE,
                  font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
-        self.progress = tk.Canvas(self.card, height=5, bg="#303640", highlightthickness=0)
+        self.progress_text = tk.StringVar(value="0% · 预计剩余：正在估算")
+        tk.Label(self.card, textvariable=self.progress_text, bg=PANEL, fg=ORANGE,
+                 font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=30, pady=(2, 3))
+        self.progress = tk.Canvas(self.card, height=8, bg="#303640", highlightthickness=0)
         self.progress.pack(fill="x", padx=30)
-        self.progress_fill = self.progress.create_rectangle(0, 0, 0, 5, fill=ORANGE, outline="")
+        self.progress_fill = self.progress.create_rectangle(0, 0, 0, 8, fill=ORANGE, outline="")
         self.progress.bind("<Configure>", lambda _: self._update_progress())
         self.footer = tk.Frame(self.card, bg=PANEL, padx=30, pady=10)
         self.footer.pack(side="bottom", fill="x")
@@ -263,8 +269,10 @@ class PolicyStudio(tk.Tk):
             child.destroy()
 
     def _update_progress(self) -> None:
-        ratio = 1 if self.step == 3 else (self.step + 1) / 3
-        self.progress.coords(self.progress_fill, 0, 0, self.progress.winfo_width() * ratio, 5)
+        status = getattr(self, "progress_status", {"state": "checking", "progress_percent": 0})
+        ratio = max(0, min(100, int(status.get("progress_percent", 100 if status.get("checked_at") else 0)))) / 100
+        self.progress_text.set(progress_caption(status))
+        self.progress.coords(self.progress_fill, 0, 0, self.progress.winfo_width() * ratio, 8)
 
     def show_step(self, step: int) -> None:
         self.step = step

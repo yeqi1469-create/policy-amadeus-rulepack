@@ -129,7 +129,7 @@ def check() -> dict:
 def release_needed() -> bool:
     paths = ["legal_rulepack.json", "app_version.json", "policy_generator.py", "policy_validator.py",
              "policy_studio.py", "policy_entry.py", "app_updater.py", "knowledge_update.py",
-             "rulepack_manager.py", "update_storage.py", "official_document.py", "policy_ai_assist.py", "codex_review_worker.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
+             "rulepack_manager.py", "update_storage.py", "update_progress.py", "official_document.py", "policy_ai_assist.py", "codex_review_worker.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
     digest = hashlib.sha256()
     for name in paths:
         digest.update(name.encode())
