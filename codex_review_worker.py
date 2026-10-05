@@ -140,12 +140,17 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         # State explicitly that this is a representation comparison, not a
         # recovered exact old portal page. The model must verify equivalence.
         before = ""
-        for candidate_url, candidate_hash in (alternatives or {}).items():
+        candidates = sorted((alternatives or {}).items(),
+                            key=lambda item: ("/TXT/HTML/" not in item[0], "/TXT/XML/" in item[0]))
+        for candidate_url, candidate_hash in candidates:
             if candidate_url == url or candidate_url not in knowledge.SOURCES.get(source, ()):
                 continue
             try:
                 doc = _http_json(RAW + "/main/automation_state/evidence/" + candidate_hash + ".json")
-                before = _verify_document(doc, candidate_hash, candidate_url)
+                candidate_text = _verify_document(doc, candidate_hash, candidate_url)
+                if "eur-lex.europa.eu" in candidate_url and not re.search(r"\bArticle\s+\d+\b", candidate_text):
+                    continue
+                before = candidate_text
                 old_url, old_hash = candidate_url, candidate_hash
                 break
             except Exception:
@@ -510,7 +515,7 @@ def publish_proposal(session, head: str, tree: str, proposal: dict) -> str:
     return commit["sha"]
 
 
-def run(*, wait_for_install=True) -> dict:
+def run(*, wait_for_install=True, retry_now=False) -> dict:
     if not enabled():
         return {"state": "disabled"}
     with worker_lock() as acquired:
@@ -524,7 +529,7 @@ def run(*, wait_for_install=True) -> dict:
             try:
                 previous_state = json.loads((folder() / "codex_review_status.json").read_text(encoding="utf-8"))
                 previous_time = datetime.fromisoformat(previous_state["checked_at"])
-                if previous_state.get("state") == "retry_pending" and (datetime.now(timezone.utc)-previous_time).total_seconds() < 3600:
+                if not retry_now and previous_state.get("state") == "retry_pending" and (datetime.now(timezone.utc)-previous_time).total_seconds() < 3600:
                     return previous_state
             except (OSError, ValueError, KeyError):
                 pass
@@ -615,6 +620,7 @@ def main():
     parser.add_argument("--enable", action="store_true")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--no-wait", action="store_true")
+    parser.add_argument("--retry-now", action="store_true", help="Retry immediately without deleting pending evidence or bypassing review")
     args = parser.parse_args()
     if args.enable:
         executable = locate_codex()
@@ -622,7 +628,7 @@ def main():
                     "codex_executable": str(executable), "paid_api_fallback": False})
         print(json.dumps({"state": "enabled", "auth": "existing_chatgpt_subscription", "repository": REPO}))
     elif args.run:
-        print(json.dumps(run(wait_for_install=not args.no_wait), ensure_ascii=True))
+        print(json.dumps(run(wait_for_install=not args.no_wait, retry_now=args.retry_now), ensure_ascii=True))
 
 
 if __name__ == "__main__":
