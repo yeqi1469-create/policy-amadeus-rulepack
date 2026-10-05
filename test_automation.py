@@ -11,6 +11,23 @@ from update_storage import write_json
 
 
 class AutomationTests(unittest.TestCase):
+    def test_current_signed_document_resolves_only_its_endpoint(self):
+        import os
+        import knowledge_update as knowledge
+        malta, moldova = 'Country — Malta', 'Country — Moldova'
+        a, b = knowledge.SOURCES[malta][0], knowledge.SOURCES[moldova][-1]
+        pack = copy.deepcopy(self.pack)
+        pack['legal_versions'].update(knowledge._scheduled_legal_versions(pack))
+        pack['reviewed_source_fingerprints'] = {malta:{a:'c'*64}}
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, LOCALAPPDATA=directory):
+            write_json(knowledge._cache_path(),{'schema':knowledge.FINGERPRINT_SCHEMA,'sources':{malta:{a:'a'*64},moldova:{b:'a'*64}}})
+            write_json(knowledge._cache_path().parent/'knowledge_coverage_latest.json',{'changed':[malta,moldova],'pending_source_fingerprints':{malta:{a:'b'*64},moldova:{b:'b'*64}}})
+            with patch.dict(knowledge.SOURCES,{malta:(a,),moldova:(b,)},clear=True), patch('knowledge_update.load_rulepack',return_value=pack), patch('knowledge_update.update_from_manifest',return_value={'state':'updated'}), patch('knowledge_update._fingerprint_source',side_effect=lambda urls:{urls[0]:'c'*64}):
+                result = knowledge.run_startup_check()
+            self.assertNotIn(malta,result['changed'])
+            self.assertIn(moldova,result['changed'])
+            self.assertEqual(json.loads(knowledge._cache_path().read_text(encoding='utf-8'))['sources'][malta][a],'c'*64)
+
     def test_automatic_release_version_is_monotonic(self):
         import automation_pipeline as pipeline
         from rulepack_manager import version_key

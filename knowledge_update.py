@@ -536,7 +536,11 @@ def _fingerprint(url: str) -> str:
     # PDF-only official portals (notably Denmark's Retsinformation) return a
     # binary response, so extract text before applying the same normalizer.
     content_type = (getattr(response, "headers", {}) or {}).get("content-type", "").lower()
-    is_pdf = "application/pdf" in content_type or url.lower().split("?", 1)[0].endswith(".pdf")
+    pdf_magic = response.content.lstrip().startswith(b'%PDF-')
+    expected_malta_pdf = url.lower().startswith('https://legislation.mt/eli/') and url.lower().split('?', 1)[0].endswith('/pdf')
+    is_pdf = pdf_magic or "application/pdf" in content_type or url.lower().split("?", 1)[0].endswith(".pdf") or expected_malta_pdf
+    if is_pdf and not pdf_magic:
+        raise RuntimeError('官方 PDF 入口返回网站外壳，未获取法律文档')
     if is_pdf:
         try:
             from pypdf import PdfReader
@@ -678,7 +682,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
         for name in list(changed):
             evidence = pending.get(name, {})
             approvals = reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {})
-            if evidence and all(approvals.get(url) == digest for url, digest in evidence.items()):
+            if evidence and all(approvals.get(url) == digest or (
+                    url in current.get(name, {}) and approvals.get(url) == current[name][url])
+                    for url, digest in evidence.items()):
                 changed.remove(name)
                 pending.pop(name, None)
                 resolved_pending.append(name)

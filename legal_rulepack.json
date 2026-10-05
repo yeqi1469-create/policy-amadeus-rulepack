@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.10.01-auto1",
+  "rulepack_version": "2026.10.05-1",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
@@ -14,6 +14,12 @@
     },
     "Country — Luxembourg": {
       "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "9e416439b5227c9ce99171cb5109765fb3c035d4ad8a5ea7e9ec7b19d1f7f053"
+    },
+    "Country — Moldova": {
+      "https://consumator.gov.md/en/node/575": "65181fcb0d87f047d2cbc673559fcc3bed4bd81830a3b021fca5b424791954e9"
+    },
+    "Country — Malta": {
+      "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
     }
   },
   "source_detection_review": {
@@ -22,7 +28,9 @@
     "Austria": "RIS documentContent excludes daily paragraph navigation; the known future FAGG section 13a remains scheduled for 1 October in Europe/Vienna.",
     "Finland": "Resolve Finnish akomaNtoso statute children from React Flight; omit deployment and sidebar data. Published 573/2026 and future 835/2026 are already recorded in the rulepack.",
     "Luxembourg": "Guichet's observed differences are office open/closed state and weekday ordering inside cmp-hours; these contact widgets are excluded while consumer guidance is retained.",
-    "Belarus": "ETALON's H11000262 response has data-length=0 and an empty doc-content-outline-root. Reject the shell as unavailable; retain all prior cache entries and continue official alternates."
+    "Belarus": "ETALON's H11000262 response has data-length=0 and an empty doc-content-outline-root. Reject the shell as unavailable; retain all prior cache entries and continue official alternates.",
+    "Moldova": "2026-10-05: retained official snapshots differ only in the view count 44 to 48. Extract the Drupal node body field, not counters or reading-time widgets. Legal text is unchanged.",
+    "Malta": "2026-10-05: the 1481-character old baseline was legislation portal navigation with point-in-time 19/09/2023, not the statute. The recovered 80-page Consumer Affairs Act PDF has the corresponding 2023 amendment list. Approve this exact recovered document and reject HTML responses at the PDF endpoint; no blanket national legal review or rule change is claimed."
   },
   "legal_versions": {
     "EU Consumer Rights Directive": "2026-09-27",

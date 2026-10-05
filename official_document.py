@@ -116,10 +116,18 @@ def extract_official_document(html: str, source_url: str) -> str | None:
     host = (urlparse(source_url).hostname or '').lower()
     if host.endswith('finlex.fi') and 'self.__next_f.push' in html:
         return _finlex_text(html)
-    if host not in {'www.ris.bka.gv.at', 'ris.bka.gv.at', 'guichet.public.lu', 'etalonline.by', 'www.etalonline.by'}:
+    if host not in {'www.ris.bka.gv.at', 'ris.bka.gv.at', 'guichet.public.lu', 'etalonline.by', 'www.etalonline.by', 'consumator.gov.md'}:
         return None
     document = _Document(html)
     nodes = list(_nodes(document.root))
+    if host == 'consumator.gov.md':
+        articles = [node for node in nodes if node.tag == 'article' and node.attrs.get('data-history-node-id')]
+        bodies = [node for article in articles for node in _nodes(article)
+                  if 'field--name-body' in node.attrs.get('class', '').split()]
+        if not bodies or not ' '.join(_text(node) for node in bodies).strip():
+            raise ValueError('Moldova did not return its article body')
+        # Drupal counters and reading-time badges are outside this field.
+        return ' '.join(_text(node) for node in bodies)
     if host.endswith('ris.bka.gv.at'):
         bodies = [node for node in nodes if 'documentContent' in node.attrs.get('class', '').split()]
         if not bodies:

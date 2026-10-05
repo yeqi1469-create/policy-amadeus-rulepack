@@ -5,6 +5,24 @@ from official_document import extract_official_document
 
 
 class OfficialDocumentTests(unittest.TestCase):
+    def test_moldova_view_count_is_not_document_text(self):
+        url = 'https://consumator.gov.md/en/node/575'
+        def page(views, days):
+            return f'<article data-history-node-id="575"><h1>Safe shopping</h1><span class="post-views">{views}</span><div class="field--name-body">Withdrawal: {days} days.</div></article>'
+        self.assertEqual(extract_official_document(page(44,14),url),extract_official_document(page(48,14),url))
+        self.assertNotEqual(extract_official_document(page(44,14),url),extract_official_document(page(48,30),url))
+
+    def test_malta_pdf_endpoint_rejects_large_navigation_shell(self):
+        from unittest.mock import Mock, patch
+        from knowledge_update import _fingerprint
+        response = Mock()
+        response.headers = {'content-type':'text/html'}
+        response.content = b'<main>Navigation and latest laws </main>'*1000
+        response.text = response.content.decode()
+        with patch('requests.get',return_value=response):
+            with self.assertRaisesRegex(RuntimeError,'PDF'):
+                _fingerprint('https://legislation.mt/eli/cap/378/eng/pdf')
+
     def test_ris_navigation_date_changes_but_law_changes_are_detected(self):
         url = 'https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350'
         def page(day, days):
