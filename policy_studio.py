@@ -293,10 +293,11 @@ class PolicyStudio(tk.Tk):
         self.after_idle(lambda: self._set_card_transparency(True))
         self.after_idle(self._render_background)
 
-    def _heading(self, number: str, title: str, description: str, compact: bool = False) -> None:
-        tk.Label(self.content, text=number, bg=PANEL, fg=ORANGE, font=("Microsoft YaHei UI", 10, "bold")).pack(anchor="w")
-        tk.Label(self.content, text=title, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 17 if compact else 19, "bold")).pack(anchor="w", pady=(3 if compact else 7, 2 if compact else 4))
-        tk.Label(self.content, text=description, bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 9 if compact else 10)).pack(anchor="w", pady=(0, 7 if compact else 19))
+    def _heading(self, number: str, title: str, description: str, compact: bool = False, parent=None) -> None:
+        parent = parent or self.content
+        tk.Label(parent, text=number, bg=PANEL, fg=ORANGE, font=("Microsoft YaHei UI", 10, "bold")).pack(anchor="w")
+        tk.Label(parent, text=title, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 17 if compact else 19, "bold")).pack(anchor="w", pady=(3 if compact else 7, 2 if compact else 4))
+        tk.Label(parent, text=description, bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 9 if compact else 10)).pack(anchor="w", pady=(0, 7 if compact else 19))
 
     def _entry(self, variable: tk.StringVar, show: str = "") -> tk.Entry:
         entry = tk.Entry(self.content, textvariable=variable, bg="#f8fafc", fg="#101827", insertbackground="#101827",
@@ -447,10 +448,21 @@ class PolicyStudio(tk.Tk):
 
     def _email_step(self) -> None:
         self.content.configure(pady=7)
-        self._heading("步骤 2 / 3", "输入店铺与客服资料", "这些资料用于明确网站运营者、卖家和客户联系方式。", compact=True)
+        viewport = tk.Canvas(self.content, bg=PANEL, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.content, orient="vertical", command=viewport.yview)
+        viewport.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        viewport.pack(side="left", fill="both", expand=True)
+        body = tk.Frame(viewport, bg=PANEL)
+        body_window = viewport.create_window((0, 0), window=body, anchor="nw")
+        body.bind("<Configure>", lambda _e: viewport.configure(scrollregion=viewport.bbox("all")))
+        viewport.bind("<Configure>", lambda e: viewport.itemconfigure(body_window, width=max(1, e.width)))
+        self._result_scroll_canvas = viewport
+        self.bind_all("<MouseWheel>", self._scroll_result)
+        self._heading("步骤 2 / 3", "输入店铺与客服资料", "这些资料用于明确网站运营者、卖家和客户联系方式。", compact=True, parent=body)
 
         def compact_field(label: str, variable: tk.StringVar, parent=None) -> tk.Entry:
-            parent = parent or self.content
+            parent = parent or body
             tk.Label(parent, text=label, bg=PANEL, fg=WHITE,
                      font=("Microsoft YaHei UI", 9, "bold")).pack(anchor="w", pady=(3, 2))
             item = tk.Entry(parent, textvariable=variable, bg="#f8fafc", fg="#101827",
@@ -458,26 +470,34 @@ class PolicyStudio(tk.Tk):
                             highlightbackground="#d1d7e0", highlightcolor=ORANGE,
                             font=("Microsoft YaHei UI", 10))
             item.pack(fill="x", ipady=6)
+            def reveal(_event=None):
+                body.update_idletasks()
+                total = max(1, body.winfo_height())
+                top = item.winfo_rooty() - body.winfo_rooty()
+                low, high = viewport.yview()
+                if top < low * total or top + item.winfo_height() > high * total:
+                    viewport.yview_moveto(max(0, (top - 24) / total))
+            item.bind("<FocusIn>", reveal)
             return item
 
-        compact_field("店铺名称 / 品牌名", self.store_name)
+        store_entry = compact_field("店铺名称 / 品牌名", self.store_name)
         compact_field("网站域名（例如 https://example.com）", self.website)
-        contacts = tk.Frame(self.content, bg=PANEL)
+        contacts = tk.Frame(body, bg=PANEL)
         contacts.pack(fill="x", pady=(1, 0))
         email_box, phone_box = tk.Frame(contacts, bg=PANEL), tk.Frame(contacts, bg=PANEL)
         email_box.pack(side="left", fill="x", expand=True, padx=(0, 5))
         phone_box.pack(side="left", fill="x", expand=True, padx=(5, 0))
         compact_field("客服邮箱", self.email, email_box)
         entry = compact_field("客服电话", self.phone, phone_box)
-        tk.Label(self.content, text="关税及进口税承担方式", bg=PANEL, fg=WHITE,
+        tk.Label(body, text="关税及进口税承担方式", bg=PANEL, fg=WHITE,
                  font=("Microsoft YaHei UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
         customs_box = ttk.Combobox(
-            self.content, textvariable=self.customs_mode, state="readonly",
+            body, textvariable=self.customs_mode, state="readonly",
             values=("卖家承担（客户收货时不另付）", "消费者承担（结账前明确披露）", "不适用（境内或关税同盟内配送）"),
             font=("Microsoft YaHei UI", 10),
         )
         customs_box.pack(fill="x", ipady=3)
-        entry.focus_set(); entry.bind("<Return>", lambda _: self._next_email())
+        store_entry.focus_set(); entry.bind("<Return>", lambda _: self._next_email())
         self._button(self.footer, "上一步", lambda: self.show_step(0)).pack(side="left")
         self._button(self.footer, "下一步", self._next_email, True).pack(side="right")
 
