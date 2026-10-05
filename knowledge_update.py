@@ -682,8 +682,15 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
         for name in list(changed):
             evidence = pending.get(name, {})
             approvals = reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {})
+            replacements = reviewed_rulepack.get("reviewed_source_replacements", {}).get(name, {})
+            def reviewed_replacement(url):
+                replacement = replacements.get(url, {})
+                target, expected = replacement.get("url"), replacement.get("sha256")
+                return bool(target and expected and target in SOURCES.get(name, ()) and
+                            approvals.get(target) == expected and current.get(name, {}).get(target) == expected)
             if evidence and all(approvals.get(url) == digest or (
                     url in current.get(name, {}) and approvals.get(url) == current[name][url])
+                    or reviewed_replacement(url)
                     for url, digest in evidence.items()):
                 changed.remove(name)
                 pending.pop(name, None)

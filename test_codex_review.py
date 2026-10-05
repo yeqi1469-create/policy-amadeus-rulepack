@@ -167,6 +167,37 @@ class CodexReviewTests(unittest.TestCase):
             worker.launch_if_needed()
             popen.assert_not_called()
 
+    def test_replacement_records_only_the_reviewed_official_body(self):
+        from knowledge_update import SOURCES
+        self.source = "EU Consumer Rights Directive"
+        original, replacement = SOURCES[self.source][-1], SOURCES[self.source][0]
+        self.evidence.update(source=self.source, url=original, old_url=replacement, new_url=replacement)
+        self.proposal["id"] = worker.digest({"source": self.source, "url": original,
+                     "new": self.evidence["new_sha256"], "base": worker.digest(self.pack)})
+        result = worker.merge_proposal(self.pack, self.proposal)
+        self.assertEqual(result["reviewed_source_replacements"][self.source][original]["url"], replacement)
+        self.assertEqual(result["reviewed_source_fingerprints"][self.source][replacement], self.evidence["new_sha256"])
+
+    def test_fabricated_replacement_not_allowed(self):
+        self.evidence["new_url"] = "https://untrusted.example/statute"
+        with self.assertRaises(worker.ReviewError):
+            worker.merge_proposal(self.pack, self.proposal)
+
+    def test_replacement_requires_fresh_signed_body_to_resolve_pending(self):
+        import knowledge_update as knowledge
+        name = "EU Consumer Rights Directive"
+        old_url, replacement = knowledge.SOURCES[name][-1], knowledge.SOURCES[name][0]
+        pack = copy.deepcopy(self.pack)
+        pack["legal_versions"].update(knowledge._scheduled_legal_versions(pack))
+        pack["reviewed_source_fingerprints"] = {name: {replacement: "b"*64}}
+        pack["reviewed_source_replacements"] = {name: {old_url: {"url": replacement, "sha256": "b"*64}}}
+        for observed, should_resolve in (("b"*64, True), ("c"*64, False)):
+            write_json(knowledge._cache_path(), {"schema":knowledge.FINGERPRINT_SCHEMA, "sources":{name:{old_url:"a"*64,replacement:"a"*64}}})
+            write_json(knowledge._cache_path().parent/"knowledge_coverage_latest.json", {"changed":[name], "pending_source_fingerprints":{name:{old_url:"d"*64}}})
+            with patch.dict(knowledge.SOURCES,{name:(old_url,replacement)},clear=True), patch("knowledge_update.load_rulepack",return_value=pack), patch("knowledge_update.update_from_manifest",return_value={"state":"current"}), patch("knowledge_update._fingerprint_source",return_value={replacement:observed}):
+                result = knowledge.run_startup_check()
+            self.assertEqual(name not in result["changed"], should_resolve)
+
     @unittest.skipUnless(sys.platform == "win32", "Windows byte-range locking")
     def test_occupied_worker_lock_exits_without_read_error(self):
         import msvcrt
