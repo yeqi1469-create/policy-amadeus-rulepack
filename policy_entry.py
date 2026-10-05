@@ -9,6 +9,10 @@ from pathlib import Path
 
 
 def main() -> None:
+    if "--auto-review" in sys.argv:
+        from codex_review_worker import run
+        run()
+        return
     if "--auto-update" not in sys.argv:
         from app_updater import start_app_update_check, start_schedule_registration
         from policy_studio import PolicyStudio

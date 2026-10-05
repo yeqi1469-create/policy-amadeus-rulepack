@@ -1092,6 +1092,13 @@ Questions about this Legal Notice may be sent to {email} or raised by telephone 
 """),
     ]
 
+    clauses = country_overlay.get("additional_legal_clauses", {})
+    if clauses:
+        if not isinstance(clauses, dict) or any(not isinstance(text, str) for text in clauses.values()):
+            raise RuntimeError("国家附加法律条款格式错误，已停止生成。")
+        raw = [(title, body + ("\n\n## Additional Mandatory Consumer Information\n" + clauses[title]
+                               if clauses.get(title) else "")) for title, body in raw]
+
     try:
         # UI buttons already provide localized Chinese labels. Translating short standalone
         # titles can return "No translation was found" on some network translators, so only

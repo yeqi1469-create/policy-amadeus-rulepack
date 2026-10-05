@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['*.py', '*.json', '*.ps1', '*.spec', 'requirements-automation.txt', '.github/workflows/free-maintenance.yml']
+    paths: ['*.py', '*.json', '*.ps1', '*.spec', 'requirements-automation.txt', '.github/workflows/free-maintenance.yml', 'automation_state/codex_proposals/*.json']
 permissions:
   contents: write
 concurrency:
@@ -28,6 +28,8 @@ jobs:
         run: python automation_pipeline.py activate
       - name: All-country daily coverage and hourly retries
         run: python automation_pipeline.py check
+      - name: Validate subscription-reviewed data proposals
+        run: python automation_pipeline.py apply-codex
       - name: Regression tests (synthetic identity, no customer data)
         env:
           POLICY_AUTOMATION_SYNTHETIC_IDENTITY: '1'

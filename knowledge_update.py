@@ -17,8 +17,8 @@ from update_storage import write_json
 
 # Stable primary sources that underpin the shared European baseline and the
 # currently implemented national overlays. A changed fingerprint means the
-# built-in legal rules need human review; it is not permission for AI to edit
-# statutory values automatically.
+# built-in legal rules need evidence-based review. Opt-in subscription review
+# prepares candidates; only tested signed rules can resolve findings.
 def _effective_eu_versions(today: date | None = None) -> dict[str, str]:
     """Return only versions already in force, never a future consolidation."""
     today = today or date.today()
@@ -705,6 +705,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
         if changed:
             state = "review_required"
             message = "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。"
+            from codex_review_worker import enabled as auto_review_enabled
+            if auto_review_enabled():
+                message = "检测到官方来源变化，正在自动审查与修复；测试和签名安装通过后恢复生成。"
         elif not current:
             state = "offline"
             message = "无法连接官方来源；将使用已核验的本地规则库，并显示离线警告。"
@@ -770,6 +773,8 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
                        "unreachable": unreachable, "report_error": report_error}
     finally:
         _READY.set()
+    from codex_review_worker import launch_if_needed
+    launch_if_needed()
     return get_status()
 
 
@@ -801,5 +806,8 @@ def require_no_detected_change() -> dict[str, object]:
         raise RuntimeError("政策知识库更新检查尚未完成，请稍后重试。")
     if status.get("state") == "review_required":
         changed = "、".join(str(item) for item in status.get("changed", []))
+        from codex_review_worker import enabled as auto_review_enabled
+        if auto_review_enabled():
+            raise RuntimeError(f"正在自动审查并修复官方来源变化（{changed}）；通过测试及签名安装后自动恢复生成。")
         raise RuntimeError(f"检测到官方法律来源发生变化（{changed}）。规则库人工复核前已禁止生成政策。")
     return status

@@ -129,7 +129,7 @@ def check() -> dict:
 def release_needed() -> bool:
     paths = ["legal_rulepack.json", "app_version.json", "policy_generator.py", "policy_validator.py",
              "policy_studio.py", "policy_entry.py", "app_updater.py", "knowledge_update.py",
-             "rulepack_manager.py", "update_storage.py", "official_document.py", "policy_ai_assist.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
+             "rulepack_manager.py", "update_storage.py", "official_document.py", "policy_ai_assist.py", "codex_review_worker.py", "apply_app_update.ps1", "register_update_tasks.ps1", "tk_runtime_hook.py"]
     digest = hashlib.sha256()
     for name in paths:
         digest.update(name.encode())
@@ -168,12 +168,15 @@ def prepare_release() -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["check", "activate", "release-needed", "prepare-release", "mark-published"])
+    parser.add_argument("command", choices=["check", "activate", "apply-codex", "release-needed", "prepare-release", "mark-published"])
     args = parser.parse_args()
     if args.command == "check":
         print(json.dumps(check(), ensure_ascii=False))
     elif args.command == "activate":
         print(json.dumps(activate(datetime.now(BEIJING).date()), ensure_ascii=False))
+    elif args.command == "apply-codex":
+        from codex_review_worker import apply_cloud_proposals
+        print(json.dumps(apply_cloud_proposals(ROOT)))
     elif args.command == "release-needed":
         print("true" if release_needed() else "false")
     elif args.command == "prepare-release":
