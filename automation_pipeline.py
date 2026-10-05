@@ -142,9 +142,33 @@ def release_needed() -> bool:
     return needed
 
 
+def prepare_release() -> str:
+    """Give every published binary a monotonically increasing version."""
+    from rulepack_manager import version_key
+    import re
+    path = ROOT / 'app_version.json'
+    current = json.loads(path.read_text(encoding='utf-8'))['version']
+    manifest_path = ROOT / 'app_manifest.json'
+    if not manifest_path.exists():
+        return current
+    published = json.loads(manifest_path.read_text(encoding='utf-8'))['version']
+    if version_key(current) > version_key(published):
+        return current
+    daily = datetime.now(BEIJING).strftime('%Y.%m.%d') + '-1'
+    if version_key(daily) > version_key(published):
+        version = daily
+    else:
+        match = re.fullmatch(r'(\d{4}\.\d{2}\.\d{2}-)(\d+)', published)
+        if not match:
+            raise ValueError('Cannot safely increment published application version')
+        version = match[1] + str(int(match[2]) + 1)
+    write_json(path, {'version': version})
+    return version
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["check", "activate", "release-needed", "mark-published"])
+    parser.add_argument("command", choices=["check", "activate", "release-needed", "prepare-release", "mark-published"])
     args = parser.parse_args()
     if args.command == "check":
         print(json.dumps(check(), ensure_ascii=False))
@@ -152,6 +176,8 @@ def main() -> None:
         print(json.dumps(activate(datetime.now(BEIJING).date()), ensure_ascii=False))
     elif args.command == "release-needed":
         print("true" if release_needed() else "false")
+    elif args.command == "prepare-release":
+        print(prepare_release())
     else:
         release_needed()
         path = ROOT / "automation_state" / "published_input_hash.txt"

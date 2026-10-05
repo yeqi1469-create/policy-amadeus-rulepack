@@ -141,8 +141,16 @@ def _stage_app_update() -> dict[str, object]:
         return {"app": "no_published_release", "version": installed_version()}
     response.raise_for_status()
     version, download_url, digest = _verify_manifest(response.json(), config["publisher_public_key"])
-    if version_key(version) <= version_key(installed_version()):
+    remote_version = version_key(version)
+    local_version = version_key(installed_version())
+    if remote_version < local_version:
         return {"app": "current", "version": installed_version()}
+    if remote_version == local_version:
+        # A signed re-build may have reused a version. Compare the actual
+        # executable as well; never silently ignore a different signed binary.
+        from rulepack_manager import sha256_file
+        if sha256_file(Path(sys.executable)) == digest:
+            return {"app": "current", "version": installed_version()}
     if _already_staged(version, digest):
         return {"app": "waiting_for_app_exit", "installed_version": installed_version(), "new_version": version}
     staged = _download_verified(download_url, digest)

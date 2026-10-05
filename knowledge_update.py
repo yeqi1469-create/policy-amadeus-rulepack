@@ -633,7 +633,16 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
                     current[name] = job.result()
                 except Exception:
                     unreachable.append(name)
-        changed: list[str] = [name for name in previous_report.get("changed", []) if incremental and name not in selected_sources]
+        # A failed fetch is not a resolution. Carry pending document evidence
+        # across full scans, incremental scans and temporary source outages.
+        changed: list[str] = []
+        pending = {name: dict(endpoints) for name, endpoints in previous_report.get("pending_source_fingerprints", {}).items() if isinstance(endpoints, dict)}
+        for name in previous_report.get("changed", []):
+            if name in SOURCES or name.startswith("Country — "):
+                changed.append(name)
+                if name not in pending:
+                    pending[name] = {url: digest for url, digest in previous_report.get("observed_source_fingerprints", {}).get(name, {}).items()
+                                     if previous.get(name, {}).get(url) != digest}
         try:
             update_result = update_from_manifest(configured_manifest_url())
             update_error = ""
@@ -660,9 +669,19 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
             if not isinstance(old_endpoints, dict):
                 continue
             approvals = reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {})
-            if any(url in old_endpoints and old_endpoints[url] != digest and approvals.get(url) != digest for url, digest in endpoints.items()):
+            differences = {url: digest for url, digest in endpoints.items() if url in old_endpoints and old_endpoints[url] != digest and approvals.get(url) != digest}
+            if differences:
+                pending.setdefault(name, {}).update(differences)
                 if name not in changed:
                     changed.append(name)
+        resolved_pending = []
+        for name in list(changed):
+            evidence = pending.get(name, {})
+            approvals = reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {})
+            if evidence and all(approvals.get(url) == digest for url, digest in evidence.items()):
+                changed.remove(name)
+                pending.pop(name, None)
+                resolved_pending.append(name)
         # Add newly reachable sources to an existing partial baseline without
         # treating them as changes. Existing fingerprints remain immutable
         # until a verified rulepack update is installed.
@@ -719,6 +738,7 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
                 if f"Country — {country}" not in selected_sources:
                     coverage[country] = previous_report.get("countries", {}).get(country, coverage[country])
         report = {
+            "pending_source_fingerprints": pending,
             "checked_at": datetime.now().astimezone().isoformat(),
             "state": state,
             "message": message,
@@ -730,9 +750,9 @@ def run_startup_check(incremental: bool = False) -> dict[str, object]:
             "mode": "incremental" if incremental else "full",
             "last_full_checked_at": previous_report.get("last_full_checked_at", previous_report.get("checked_at")) if incremental else datetime.now().astimezone().isoformat(),
             "observed_source_fingerprints": current,
-            "reviewed_resolutions": [name for name, endpoints in current.items() if name not in changed
+            "reviewed_resolutions": list(dict.fromkeys(resolved_pending + [name for name, endpoints in current.items() if name not in changed
                 and any(reviewed_rulepack.get("reviewed_source_fingerprints", {}).get(name, {}).get(url) == digest
-                        for url, digest in endpoints.items())],
+                        for url, digest in endpoints.items())])),
         }
         report_error = ""
         try:

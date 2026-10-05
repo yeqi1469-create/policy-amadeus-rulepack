@@ -11,6 +11,67 @@ from update_storage import write_json
 
 
 class AutomationTests(unittest.TestCase):
+    def test_automatic_release_version_is_monotonic(self):
+        import automation_pipeline as pipeline
+        from rulepack_manager import version_key
+        with tempfile.TemporaryDirectory() as directory, patch('automation_pipeline.ROOT', Path(directory)):
+            path = Path(directory)/'app_version.json'
+            write_json(path, {'version':'2099.01.01-2'})
+            write_json(Path(directory)/'app_manifest.json', {'version':'2099.01.01-2'})
+            first = pipeline.prepare_release()
+            self.assertEqual(first, '2099.01.01-3')
+            self.assertEqual(pipeline.prepare_release(), first)
+            write_json(Path(directory)/'app_manifest.json', {'version':first})
+            self.assertGreater(version_key(pipeline.prepare_release()), version_key(first))
+
+    def test_pending_source_change_survives_outage_until_exact_review(self):
+        import os
+        import knowledge_update as knowledge
+        name = 'Country — Malta'
+        url = knowledge.SOURCES[name][0]
+        pack = copy.deepcopy(self.pack)
+        pack['legal_versions'].update(knowledge._scheduled_legal_versions(pack))
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, LOCALAPPDATA=directory):
+            write_json(knowledge._cache_path(), {'schema':knowledge.FINGERPRINT_SCHEMA, 'sources':{name:{url:'a'*64}}})
+            write_json(knowledge._cache_path().parent/'knowledge_coverage_latest.json', {'changed':[name], 'observed_source_fingerprints':{name:{url:'b'*64}}})
+            with patch.dict(knowledge.SOURCES, {name:(url,)}, clear=True), patch('knowledge_update.load_rulepack',return_value=pack), patch('knowledge_update.update_from_manifest',return_value={'state':'current'}), patch('knowledge_update._fingerprint_source',side_effect=OSError('offline')):
+                self.assertIn(name, knowledge.run_startup_check()['changed'])
+                self.assertIn(name, knowledge.run_startup_check(incremental=True)['changed'])
+                pack['reviewed_source_fingerprints'] = {name:{url:'c'*64}}
+                self.assertIn(name, knowledge.run_startup_check()['changed'])
+                pack['reviewed_source_fingerprints'] = {name:{url:'b'*64}}
+                self.assertNotIn(name, knowledge.run_startup_check()['changed'])
+            report = json.loads((knowledge._cache_path().parent/'knowledge_coverage_latest.json').read_text(encoding='utf-8'))
+            self.assertIn(name, report['reviewed_resolutions'])
+            self.assertEqual(json.loads(knowledge._cache_path().read_text(encoding='utf-8'))['sources'][name][url], 'a'*64)
+
+    def test_rule_tempfile_failure_keeps_active_file(self):
+        import os
+        import hashlib
+        import base64
+        import rulepack_manager as rules
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        key = Ed25519PrivateKey.generate()
+        public = base64.b64encode(key.public_key().public_bytes(Encoding.Raw,PublicFormat.Raw)).decode()
+        candidate = copy.deepcopy(self.pack)
+        candidate['rulepack_version'] = '9999.01.01-1'
+        body = json.dumps(candidate).encode()
+        manifest = dict(rulepack_version=candidate['rulepack_version'],download_url='https://example.com/rules.json',sha256=hashlib.sha256(body).hexdigest())
+        manifest['signature'] = base64.b64encode(key.sign(json.dumps(manifest,sort_keys=True,separators=(',',':')).encode())).decode()
+        from unittest.mock import Mock
+        first, second = Mock(), Mock()
+        first.json.return_value = manifest
+        second.content = body
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ,LOCALAPPDATA=directory):
+            target = rules._data_dir()/'legal_rulepack.json'
+            write_json(target,self.pack)
+            original = target.read_bytes()
+            with patch('rulepack_manager._channel_config',return_value={'publisher_public_key':public}), patch('requests.get',side_effect=[first,second]), patch('rulepack_manager.tempfile.mkstemp',side_effect=OSError('disk full')):
+                with self.assertRaises(OSError):
+                    rules.update_from_manifest('https://example.com/manifest.json')
+            self.assertEqual(target.read_bytes(), original)
+
     @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows byte-range locking')
     def test_busy_background_lock_exits_without_reading(self):
         import os

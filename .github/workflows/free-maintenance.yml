@@ -38,6 +38,9 @@ jobs:
         run: |
           $needed = python automation_pipeline.py release-needed
           "needed=$needed" >> $env:GITHUB_OUTPUT
+      - name: Assign monotonic application version
+        if: steps.changes.outputs.needed == 'true'
+        run: python automation_pipeline.py prepare-release
       - name: Build Windows application
         if: steps.changes.outputs.needed == 'true'
         run: python -m PyInstaller --noconfirm 'Shopify Policy Studio.spec'
@@ -57,7 +60,7 @@ jobs:
           }
           git config user.name 'policy-maintenance-bot'
           git config user.email 'policy-maintenance-bot@users.noreply.github.com'
-          git add automation_state legal_rulepack.json
+          git add automation_state legal_rulepack.json app_version.json
           if ($env:RELEASE_NEEDED -eq 'true') { git add manifest.json app_manifest.json PolicyAmadeus.exe }
           git diff --cached --quiet
           if ($LASTEXITCODE -eq 1) {

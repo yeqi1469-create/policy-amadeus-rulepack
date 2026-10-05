@@ -5,6 +5,7 @@ import json
 import os
 import tempfile
 import base64
+import shutil
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -164,20 +165,27 @@ def update_from_manifest(manifest_url: str) -> dict[str, str]:
         raise RulepackError("更新清单与规则包版本不一致")
     target = _data_dir() / "legal_rulepack.json"
     backup = _data_dir() / "legal_rulepack.backup.json"
-    if target.exists():
-        backup.unlink(missing_ok=True)
-        target.replace(backup)
     fd, temp_name = tempfile.mkstemp(prefix="rulepack-", suffix=".json", dir=_data_dir())
+    replaced = False
+    had_target = target.exists()
     try:
         with os.fdopen(fd, "wb") as stream:
             stream.write(payload.content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        if had_target:
+            # Keep the active file available until the atomic replacement.
+            shutil.copyfile(target, backup)
         Path(temp_name).replace(target)
+        replaced = True
         load_rulepack()
     except Exception:
         Path(temp_name).unlink(missing_ok=True)
-        target.unlink(missing_ok=True)
-        if backup.exists():
-            backup.replace(target)
+        if replaced:
+            if had_target and backup.exists():
+                backup.replace(target)
+            elif not had_target:
+                target.unlink(missing_ok=True)
         raise
     return {"state": "updated", "message": f"政策规则包已自动更新到 {candidate['rulepack_version']}"}
 
