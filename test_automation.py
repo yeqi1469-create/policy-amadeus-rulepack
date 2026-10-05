@@ -11,6 +11,49 @@ from update_storage import write_json
 
 
 class AutomationTests(unittest.TestCase):
+    @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows byte-range locking')
+    def test_busy_background_lock_exits_without_reading(self):
+        import os
+        import msvcrt
+        import policy_entry
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, LOCALAPPDATA=directory):
+            path = Path(directory) / 'Policy Amadeus' / 'auto_update.lock'
+            path.parent.mkdir()
+            with path.open('w+b') as handle:
+                handle.write(b'0')
+                handle.flush()
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                try:
+                    with patch('policy_entry.sys.argv', ['app', '--auto-update']), patch('app_updater.run_auto_update') as update:
+                        policy_entry.main()
+                    update.assert_not_called()
+                finally:
+                    handle.seek(0)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+
+    @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows byte-range locking')
+    def test_empty_background_lock_initializes_and_releases(self):
+        import os
+        import policy_entry
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, LOCALAPPDATA=directory):
+            with patch('policy_entry.sys.argv', ['app', '--auto-update']), patch('app_updater.run_auto_update') as update:
+                policy_entry.main()
+                policy_entry.main()
+            self.assertEqual(update.call_count, 2)
+            self.assertEqual((Path(directory)/'Policy Amadeus/auto_update.lock').read_bytes(), b'0')
+
+    @unittest.skipUnless(__import__('sys').platform == 'win32', 'Windows byte-range locking')
+    def test_background_failure_releases_lock_for_retry(self):
+        import os
+        import policy_entry
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, LOCALAPPDATA=directory):
+            with patch('policy_entry.sys.argv', ['app', '--auto-update']), patch('app_updater.run_auto_update', side_effect=[RuntimeError('test failure'), {}]) as update:
+                policy_entry.main()
+                policy_entry.main()
+            self.assertEqual(update.call_count, 2)
+            self.assertTrue((Path(directory)/'Policy Amadeus/auto_update_error.json').exists())
+
     def setUp(self):
         self.pack = json.loads(Path("legal_rulepack.json").read_text(encoding="utf-8"))
         self.entries = json.loads(Path("reviewed_changes.json").read_text(encoding="utf-8"))

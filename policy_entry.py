@@ -23,10 +23,6 @@ def main() -> None:
     # Windows releases the byte-range lock even when the process crashes.
     with (folder / "auto_update.lock").open("a+b") as lock:
         lock.seek(0)
-        if not lock.read(1):
-            lock.write(b"0")
-            lock.flush()
-        lock.seek(0)
         if sys.platform == "win32":
             import msvcrt
             try:
@@ -34,6 +30,12 @@ def main() -> None:
             except OSError:
                 return
         try:
+            # Lock before reading/writing: another process's byte-range lock
+            # also denies reads, so probing the first byte can raise EACCES.
+            # Windows permits locking a byte beyond EOF on a new empty file.
+            if os.fstat(lock.fileno()).st_size == 0:
+                lock.write(b"0")
+                lock.flush()
             from app_updater import run_auto_update
             run_auto_update()
         except Exception:
