@@ -5,7 +5,7 @@
       "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b"
     },
     "Country — Latvia": {
-      "https://likumi.lv/ta/id/23309": "93929c6016b56662dd73ce8efcfc6045e2a91efc3c7e73263245662e254ed73f"
+      "https://likumi.lv/ta/id/23309": "4af7de7ce71d1679a6ce4f256fb8042c74f7f3c1db19d8bcfb8c576771db42bb"
     },
     "Country — Finland": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b",
@@ -15,7 +15,7 @@
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482": "0b3eca59974c03992989789ae63252f2586d45d93f5b3d654c79f53e2cef8902"
     }
   },
-  "checked_at": "2026-10-06T10:26:45.615103+00:00",
+  "checked_at": "2026-10-06T17:16:19.022227+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -25,7 +25,8 @@
     "Country — Lithuania"
   ],
   "unreachable": [
-    "Country — Romania"
+    "Country — Romania",
+    "Germany BGB"
   ],
   "countries": {
     "Germany": {
@@ -187,14 +188,14 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-06T10:26:45.614873+00:00"
+      "checked_at": "2026-10-06T17:16:19.022030+00:00"
     },
     "Romania": {
       "status": "temporarily_unreachable",
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-06T10:26:45.614879+00:00"
+      "checked_at": "2026-10-06T17:16:19.022036+00:00"
     },
     "Czechia": {
       "status": "source_fingerprint_no_change",
@@ -235,13 +236,12 @@
     "Ukraine": {
       "status": "source_changed",
       "official_sources_reached": [
-        "https://zakon.rada.gov.ua/go/1023-12",
         "https://zakon.rada.gov.ua/laws/show/1023-12",
         "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119"
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-06T10:26:45.614908+00:00"
+      "checked_at": "2026-10-06T17:16:19.022067+00:00"
     },
     "Slovakia": {
       "status": "source_fingerprint_no_change",
@@ -287,7 +287,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-06T10:26:45.614955+00:00"
+      "checked_at": "2026-10-06T17:16:19.022097+00:00"
     },
     "Slovenia": {
       "status": "source_fingerprint_no_change",
@@ -305,7 +305,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-06T10:26:45.614980+00:00"
+      "checked_at": "2026-10-06T17:16:19.022109+00:00"
     },
     "Estonia": {
       "status": "source_fingerprint_no_change",
@@ -506,7 +506,7 @@
     "state": "cloud_source_run"
   },
   "mode": "incremental",
-  "last_full_checked_at": "2026-10-06T10:26:45.615109+00:00",
+  "last_full_checked_at": "2026-10-06T17:16:19.022233+00:00",
   "observed_source_fingerprints": {
     "EU GDPR obligations": {
       "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
@@ -517,35 +517,31 @@
     "EU Consumer Rights Directive": {
       "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
-    "Germany BGB": {
-      "https://www.gesetze-im-internet.de/bgb/": "7bc9f2d81ee9454525f738e3819e7c032d92095877e53c6550b99e0955fb681b"
-    },
     "UK distance selling": {
       "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
-    },
-    "Swiss ecommerce obligations": {
-      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
-      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
-      "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722",
-      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402"
     },
     "Country — Finland": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b",
       "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b"
     },
+    "Swiss ecommerce obligations": {
+      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
+      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
+      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402",
+      "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722"
+    },
     "Turkey distance contracts": {
       "https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme": "f0017a5ee78cc75f8ad40fce889e99bee781f5c167f78a1f25f926d45c63e2f1"
     },
     "Country — Latvia": {
-      "https://likumi.lv/ta/id/23309": "93929c6016b56662dd73ce8efcfc6045e2a91efc3c7e73263245662e254ed73f"
-    },
-    "Country — Ukraine": {
-      "https://zakon.rada.gov.ua/laws/show/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f",
-      "https://zakon.rada.gov.ua/go/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f",
-      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab"
+      "https://likumi.lv/ta/id/23309": "4af7de7ce71d1679a6ce4f256fb8042c74f7f3c1db19d8bcfb8c576771db42bb"
     },
     "Country — Lithuania": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482": "0b3eca59974c03992989789ae63252f2586d45d93f5b3d654c79f53e2cef8902"
+    },
+    "Country — Ukraine": {
+      "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab",
+      "https://zakon.rada.gov.ua/laws/show/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f"
     }
   },
   "reviewed_resolutions": [],
