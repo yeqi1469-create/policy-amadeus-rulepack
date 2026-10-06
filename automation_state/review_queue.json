@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-06T07:02:50.468477+00:00",
+    "last_seen": "2026-10-06T10:26:45.615103+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -33,7 +33,7 @@
   },
   "Country — Finland": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-06T07:02:50.468477+00:00",
+    "last_seen": "2026-10-06T10:26:45.615103+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b",
@@ -44,17 +44,17 @@
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-06T07:02:50.468477+00:00",
+    "last_seen": "2026-10-06T10:26:45.615103+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://zakon.rada.gov.ua/go/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f",
       "https://zakon.rada.gov.ua/laws/show/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f",
+      "https://zakon.rada.gov.ua/go/1023-12": "155261a9ec685b5b24d4cf764163d71d3ba725aba8e8e4842809faab85d0aa1f",
       "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-06T07:02:50.468477+00:00",
+    "last_seen": "2026-10-06T10:26:45.615103+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "93929c6016b56662dd73ce8efcfc6045e2a91efc3c7e73263245662e254ed73f"
@@ -105,7 +105,7 @@
   },
   "Country — Lithuania": {
     "first_seen": "2026-10-06T03:04:46.412933+00:00",
-    "last_seen": "2026-10-06T07:02:50.468477+00:00",
+    "last_seen": "2026-10-06T10:26:45.615103+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482": "0b3eca59974c03992989789ae63252f2586d45d93f5b3d654c79f53e2cef8902"
