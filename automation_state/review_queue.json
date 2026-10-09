@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -19,7 +19,7 @@
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -33,7 +33,7 @@
   },
   "Country — Finland": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b",
@@ -44,17 +44,16 @@
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
       "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
       "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
@@ -83,7 +82,7 @@
   },
   "Country — Germany": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -105,7 +104,7 @@
   },
   "Country — Lithuania": {
     "first_seen": "2026-10-06T03:04:46.412933+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482": "0b3eca59974c03992989789ae63252f2586d45d93f5b3d654c79f53e2cef8902"
@@ -113,7 +112,7 @@
   },
   "Country — Iceland": {
     "first_seen": "2026-10-07T01:38:53.357400+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.althingi.is/lagas/nuna/2000046.html": "46e8f18971bd175db20456b6ed42447c02b253151a0271af09c1626eda54e8dc"
@@ -127,7 +126,7 @@
   },
   "Country — Montenegro": {
     "first_seen": "2026-10-08T02:02:51.003315+00:00",
-    "last_seen": "2026-10-09T07:00:41.552831+00:00",
+    "last_seen": "2026-10-09T08:29:14.416309+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.sluzbenilist.me/propisi/390427": "6bdaea5ee26a0d9a1cfc4dda1578160b59f9fec2e115c6ff49b572de8502dd38",
