@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -13,13 +13,13 @@
   },
   "Turkey distance contracts": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -28,12 +28,12 @@
     "last_seen": "2026-09-30T06:12:21.285819+00:00",
     "status": "resolved_by_reviewed_rulepack",
     "observed_source_fingerprints": {},
-    "resolved_at": "2026-10-08T02:02:51.003315+00:00",
+    "resolved_at": "2026-10-09T02:16:17.841039+00:00",
     "rulepack_version": "2026.10.05-2"
   },
   "Country — Finland": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "5d309ddcaefb09e1eef7cb7fadfe1af0cc706c5e524aa23f90f726556dff116b",
@@ -44,17 +44,17 @@
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
       "https://zakon.rada.gov.ua/laws/show/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
+      "https://zakon.rada.gov.ua/go/1023-12": "fca0af6ef4ffb65bdf36900384f768a14f42364c0697c43b099bb2df3ae27f7b",
       "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119": "40b6075b5ad618cd28774d103efc66b04f8cfc93d1b0edae53b66e8296508dab"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
@@ -67,7 +67,7 @@
     "observed_source_fingerprints": {
       "https://consumator.gov.md/en/node/575": "299f620b470b47d8997ae6e65785ab49ea5a4acc6c55339a438b02e46a66af33"
     },
-    "resolved_at": "2026-10-08T02:02:51.003315+00:00",
+    "resolved_at": "2026-10-09T02:16:17.841039+00:00",
     "rulepack_version": "2026.10.05-2"
   },
   "Country — Luxembourg": {
@@ -78,12 +78,12 @@
       "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html": "b7b6c278a41a1000eb02087de2d05b37a96760a68360c055a009131621c326ef",
       "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "7ae7c7e014fe1278314e468dbff9b6d7db7e4ec01605a4e31e773e3a64644886"
     },
-    "resolved_at": "2026-10-08T02:02:51.003315+00:00",
+    "resolved_at": "2026-10-09T02:16:17.841039+00:00",
     "rulepack_version": "2026.10.05-2"
   },
   "Country — Germany": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-08T06:52:04.945707+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -94,7 +94,7 @@
     "observed_source_fingerprints": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
     },
-    "resolved_at": "2026-10-08T02:02:51.003315+00:00",
+    "resolved_at": "2026-10-09T02:16:17.841039+00:00",
     "rulepack_version": "2026.10.05-2"
   },
   "Country — Belgium": {
@@ -105,7 +105,7 @@
   },
   "Country — Lithuania": {
     "first_seen": "2026-10-06T03:04:46.412933+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482": "0b3eca59974c03992989789ae63252f2586d45d93f5b3d654c79f53e2cef8902"
@@ -113,7 +113,7 @@
   },
   "Country — Iceland": {
     "first_seen": "2026-10-07T01:38:53.357400+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.althingi.is/lagas/nuna/2000046.html": "46e8f18971bd175db20456b6ed42447c02b253151a0271af09c1626eda54e8dc"
@@ -127,11 +127,17 @@
   },
   "Country — Montenegro": {
     "first_seen": "2026-10-08T02:02:51.003315+00:00",
-    "last_seen": "2026-10-08T22:09:47.789043+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.sluzbenilist.me/propisi/390427": "6bdaea5ee26a0d9a1cfc4dda1578160b59f9fec2e115c6ff49b572de8502dd38",
       "https://wapi.gov.me/download/49d8cec5-9723-461b-9297-d3a6a5c2c7a8?version=1.0": "d3ea37f8acca3cc6a3e940b9b5054e2fdbd072e3b8077694a6252b78f852f7b7"
     }
+  },
+  "Country — Turkey": {
+    "first_seen": "2026-10-09T02:16:17.841039+00:00",
+    "last_seen": "2026-10-09T02:16:17.841039+00:00",
+    "status": "retry_official_source",
+    "observed_source_fingerprints": {}
   }
 }
