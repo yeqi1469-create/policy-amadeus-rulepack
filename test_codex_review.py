@@ -19,7 +19,7 @@ class CodexReviewTests(unittest.TestCase):
         bundled = home/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"
         bundled.parent.mkdir(parents=True)
         bundled.write_bytes(b"synthetic-git-fixture")
-        with patch.object(worker.shutil, "which", return_value=None), patch.object(worker.Path, "home", return_value=home):
+        with patch.dict(os.environ, {"ProgramFiles": str(home/"absent-programs")}), patch.object(worker.shutil, "which", return_value=None), patch.object(worker.Path, "home", return_value=home):
             self.assertEqual(worker.locate_git(), str(bundled.resolve()))
 
     def test_unrelated_and_repealed_official_endpoints_excluded(self):
