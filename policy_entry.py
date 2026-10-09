@@ -24,7 +24,7 @@ def main() -> None:
         return
     if "--auto-review" in sys.argv:
         from codex_review_worker import run
-        run()
+        run(retry_now="--retry-now" in sys.argv)
         return
     if "--auto-update" not in sys.argv:
         from app_updater import start_app_update_check, start_schedule_registration
