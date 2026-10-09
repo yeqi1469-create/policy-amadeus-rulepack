@@ -206,7 +206,9 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
         "https://www.pravno-informacioni-sistem.rs/",
         "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1",
     ),
-    "Lithuania": ("https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482",),
+    "Lithuania": ("https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr",
+                  "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020",
+                  "https://vvtat.lrv.lt/lt/DUK/"),
     "Slovenia": (
         "https://pisrs.si/api/datoteke/integracije/356439411",
         "https://pisrs.si/pregledPredpisa?id=ZAKO7054&tab=analiticni",

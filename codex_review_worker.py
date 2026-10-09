@@ -113,6 +113,7 @@ def record(state: str, **fields) -> dict:
               "publishing": 65, "awaiting_cloud_tests": 75, "installing": 90,
               "rechecking": 95, "installed": 100, "current": 100}
     stage = fields.pop("stage", state)
+    fields.setdefault("source_errors", previous.get("source_errors", {}))
     started = previous.get("started_at") if previous.get("state") not in ("retry_pending", "installed", "current") else None
     started = started or datetime.now(timezone.utc).isoformat()
     value = {"state": state, "stage": stage, "worker_pid": os.getpid(), "started_at": started,
