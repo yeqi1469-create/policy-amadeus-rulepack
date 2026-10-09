@@ -233,7 +233,8 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
         "https://www.consumer.gov.cy/meci/cyco/cyconsumer.nsf/All/9EF29C3192873F25C2257FD5004000C9",
         "https://www.consumer.gov.cy/meci/cyco/cyconsumer.nsf/All/058B4ACC04925FEEC2257FD500318BCC",
     ),
-    "Iceland": ("https://www.althingi.is/lagas/nuna/2000046.html",),
+    "Iceland": ("https://www.althingi.is/lagas/nuna/2016016.html",
+                "https://www.althingi.is/altext/lagasofn/nuna/2016016.html"),
     "Bosnia and Herzegovina": (
         # The ministry's page is a dynamic document wrapper; this stable
         # official file endpoint returns the underlying gazette PDF directly.

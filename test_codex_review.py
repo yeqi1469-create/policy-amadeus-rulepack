@@ -14,6 +14,11 @@ from update_storage import write_json
 
 
 class CodexReviewTests(unittest.TestCase):
+    def test_unrelated_and_repealed_official_endpoints_excluded(self):
+        from knowledge_update import COUNTRY_OFFICIAL_SOURCES
+        self.assertNotIn("https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482", COUNTRY_OFFICIAL_SOURCES["Lithuania"])
+        self.assertNotIn("https://www.althingi.is/lagas/nuna/2000046.html", COUNTRY_OFFICIAL_SOURCES["Iceland"])
+
     def test_queue_continues_after_individual_failure(self):
         with patch.object(worker, "_run_one", side_effect=[
             {"state": "retry_pending", "source_errors": {"Country — Malta": {"failed_at": 1}}},
