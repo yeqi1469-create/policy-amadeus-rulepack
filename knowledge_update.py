@@ -814,7 +814,14 @@ def get_status(wait_seconds: float = 0) -> dict[str, object]:
     except (OSError, ValueError, KeyError, RuntimeError):
         pass
     with _LOCK:
-        return dict(_STATUS)
+        result = dict(_STATUS)
+    if result.get("changed") and result.get("state") != "checking":
+        from codex_review_worker import read_review_status
+        review = read_review_status()
+        result["update_status"] = review
+        result["progress_percent"] = review.get("progress_percent", 0)
+        result["message"] = str(review.get("message", "等待自动更新"))
+    return result
 
 
 def require_no_detected_change() -> dict[str, object]:
@@ -825,6 +832,6 @@ def require_no_detected_change() -> dict[str, object]:
         changed = "、".join(str(item) for item in status.get("changed", []))
         from codex_review_worker import enabled as auto_review_enabled
         if auto_review_enabled():
-            raise RuntimeError(f"正在自动审查并修复官方来源变化（{changed}）；通过测试及签名安装后自动恢复生成。")
+            raise RuntimeError(f"{status.get('message', '等待自动更新')}（{changed}）；测试及签名安装完成后恢复生成。")
         raise RuntimeError(f"检测到官方法律来源发生变化（{changed}）。规则库人工复核前已禁止生成政策。")
     return status

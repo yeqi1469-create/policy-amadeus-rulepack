@@ -14,6 +14,19 @@ from update_storage import write_json
 
 
 class CodexReviewTests(unittest.TestCase):
+    def test_queue_continues_after_individual_failure(self):
+        with patch.object(worker, "_run_one", side_effect=[
+            {"state": "retry_pending", "source_errors": {"Country — Malta": {"failed_at": 1}}},
+            {"state": "current"}]) as attempt:
+            self.assertEqual(worker.run()["state"], "current")
+            self.assertEqual(attempt.call_count, 2)
+            self.assertTrue(attempt.call_args.kwargs["retry_now"])
+
+    def test_old_running_status_is_not_claimed_active(self):
+        write_json(worker.folder()/"codex_review_status.json", {
+            "state": "reviewing", "checked_at": "2020-01-01T00:00:00+00:00"})
+        self.assertEqual(worker.read_review_status()["state"], "retry_pending")
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

@@ -104,7 +104,34 @@ def worker_lock():
 
 
 def record(state: str, **fields) -> dict:
-    value = {"state": state, "checked_at": datetime.now(timezone.utc).isoformat(), **fields}
+    previous = {}
+    try:
+        previous = json.loads((folder()/"codex_review_status.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    stages = {"preparing": 5, "fetching_evidence": 15, "reviewing": 30, "verifying": 55,
+              "publishing": 65, "awaiting_cloud_tests": 75, "installing": 90,
+              "rechecking": 95, "installed": 100, "current": 100}
+    stage = fields.pop("stage", state)
+    started = previous.get("started_at") if previous.get("state") not in ("retry_pending", "installed", "current") else None
+    started = started or datetime.now(timezone.utc).isoformat()
+    value = {"state": state, "stage": stage, "worker_pid": os.getpid(), "started_at": started,
+             "progress_percent": stages.get(stage, previous.get("progress_percent", 0)),
+             "remaining_seconds": None, "checked_at": datetime.now(timezone.utc).isoformat(), **fields}
+    if state == "retry_pending":
+        value["retry_at"] = datetime.fromtimestamp(time.time()+3600, timezone.utc).isoformat()
+    history_path = folder()/"codex_review_durations.json"
+    try:
+        durations = json.loads(history_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        durations = []
+    elapsed = (datetime.now(timezone.utc)-datetime.fromisoformat(started)).total_seconds()
+    if state == "installed" and elapsed > 1:
+        write_json(history_path, (durations+[elapsed])[-10:])
+    if durations and state not in ("retry_pending", "current", "installed"):
+        estimate = sorted(durations)[len(durations)//2]-elapsed
+        if estimate > 0:
+            value["remaining_seconds"] = int(estimate)
     write_json(folder() / "codex_review_status.json", value)
     return value
 
@@ -275,6 +302,7 @@ def review(evidence: dict, pack: dict) -> tuple[dict, dict]:
     context = {"evidence": evidence, "current_rulepack": pack,
                "today_utc": datetime.now(timezone.utc).date().isoformat()}
     decision = codex_json(instructions + json.dumps(context, ensure_ascii=False), decision_schema(), "proposal")
+    record("reviewing", stage="verifying", source=evidence["source"], message="正在独立复核审查结论")
     schema = {"type": "object", "properties": {"approved": {"type": "boolean"}, "reason": {"type": "string"},
         "quotes": {"type": "array", "items": {"type": "string"}}},
         "required": ["approved", "reason", "quotes"], "additionalProperties": False}
@@ -464,7 +492,13 @@ def apply_cloud_proposals(root: Path) -> list[str]:
 
 def _repository_session():
     import requests
-    result = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
+    git = shutil.which("git")
+    if not git:
+        git = next((str(p) for p in (Path(os.environ.get("ProgramFiles", "C:/Program Files"))/"Git/cmd/git.exe",
+                   Path(os.environ.get("LOCALAPPDATA", ""))/"Programs/Git/cmd/git.exe") if p.is_file()), None)
+    if not git:
+        raise ReviewError("未找到 Git 发布工具；已保留待办，等待自动重试")
+    result = subprocess.run([git, "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
         capture_output=True, text=True, timeout=60, env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     values = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
@@ -515,7 +549,7 @@ def publish_proposal(session, head: str, tree: str, proposal: dict) -> str:
     return commit["sha"]
 
 
-def run(*, wait_for_install=True, retry_now=False) -> dict:
+def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
     if not enabled():
         return {"state": "disabled"}
     with worker_lock() as acquired:
@@ -533,15 +567,28 @@ def run(*, wait_for_install=True, retry_now=False) -> dict:
                     return previous_state
             except (OSError, ValueError, KeyError):
                 pass
+            record("preparing", message="正在检查发布授权与签名规则基线")
             session = _repository_session()
             head, tree, pack = signed_repository_base(session)
             cache = json.loads((folder() / "knowledge_source_state.json").read_text(encoding="utf-8"))["sources"]
-            source = next((name for name in report["changed"] if report.get("pending_source_fingerprints", {}).get(name)), None)
-            if source is None:
-                raise ReviewError("检测项没有可核对的新旧正文；自动重试，未批准法律版本")
-            url = next(iter(report["pending_source_fingerprints"][source]))
-            record("reviewing", source=source, message="正在自动核查官方正文并生成修复候选")
-            evidence = prepare_evidence(source, url, cache[source][url], cache[source])
+            source_errors = dict(previous_state.get("source_errors", {}))
+            evidence = None
+            for source in report["changed"]:
+                recent = source_errors.get(source, {})
+                if time.time() - recent.get("failed_at", 0) < 3600:
+                    continue
+                for url in report.get("pending_source_fingerprints", {}).get(source, {}):
+                    record("fetching_evidence", source=source, source_errors=source_errors, message="正在获取新旧官方法律正文")
+                    try:
+                        evidence = prepare_evidence(source, url, cache.get(source, {}).get(url, ""), cache.get(source, {}))
+                        break
+                    except Exception as exc:
+                        source_errors[source] = {"failed_at": time.time(), "reason": str(exc) if isinstance(exc, ReviewError) else type(exc).__name__}
+                if evidence is not None:
+                    break
+            if evidence is None:
+                raise ReviewError("待审入口缺少可靠新旧正文或暂时不可达；已逐项记录，稍后重试")
+            record("reviewing", source=source, source_errors=source_errors, message="正在自动核查官方正文并生成修复候选")
             proposal_id = digest({"source": source, "url": url, "new": evidence["new_sha256"], "base": digest(pack)})
             proposal_path = folder() / "codex_review" / "proposals" / (proposal_id + ".json")
             if proposal_path.exists():
@@ -567,9 +614,10 @@ def run(*, wait_for_install=True, retry_now=False) -> dict:
             if previous_state.get("proposal_id") == proposal_id and previous_state.get("commit"):
                 commit = previous_state["commit"]
             else:
+                record("publishing", source=source, source_errors=source_errors, message="正在提交通过双轮审查的候选")
                 commit = publish_proposal(session, head, tree, proposal)
             state = record("awaiting_cloud_tests", source=source, proposal_id=proposal_id, commit=commit,
-                message="自动审查已形成候选；正在等待云端测试、签名和安装")
+                source_errors=source_errors, message="自动审查已形成候选；正在等待云端测试、签名和安装")
             if not wait_for_install:
                 return state
             from rulepack_manager import configured_manifest_url, load_rulepack, update_from_manifest
@@ -583,18 +631,44 @@ def run(*, wait_for_install=True, retry_now=False) -> dict:
                     continue
                 active = load_rulepack()
                 if active.get("reviewed_source_fingerprints", {}).get(source, {}).get(reviewed_url) == evidence["new_sha256"]:
+                    record("rechecking", source=source, message="签名规则已安装，正在重新检查")
                     knowledge.run_startup_check(incremental=True)
                     current = knowledge.get_status()
                     return record("installed" if not current.get("changed") else "more_reviews_pending",
                         source=source, proposal_id=proposal_id, commit=commit, rulepack_version=active["rulepack_version"],
-                        remaining=current.get("changed", []), message="签名修复规则已安装并重新检查")
+                        source_errors=source_errors, remaining=current.get("changed", []), message="签名修复规则已安装并重新检查")
                 time.sleep(60)
             raise ReviewError("候选尚未通过完整测试或发布；已保留待办并自动重试")
         except Exception as exc:
             # Do not leak credential subprocess output, raw HTTP body or model prompts.
             message = str(exc) if isinstance(exc, ReviewError) else "自动审查的证据获取或发布失败；待办保留，稍后重试"
+            if locals().get("source") and locals().get("evidence") is not None:
+                source_errors[source] = {"failed_at": time.time(), "reason": message}
             return record("retry_pending", message=message,
+                          failure_type=type(exc).__name__, source_errors=locals().get("source_errors", {}),
                           proposal_id=locals().get("proposal_id"), commit=locals().get("commit"))
+
+
+def run(*, wait_for_install=True, retry_now=False) -> dict:
+    for _ in range(3):
+        result = _run_one(wait_for_install=wait_for_install, retry_now=retry_now)
+        if result.get("state") not in ("more_reviews_pending", "retry_pending") or not result.get("source_errors"):
+            return result
+        retry_now = True
+    return result
+
+
+def read_review_status() -> dict:
+    try:
+        status = json.loads((folder()/"codex_review_status.json").read_text(encoding="utf-8"))
+        if status.get("state") in ("reviewing", "preparing", "fetching_evidence", "publishing", "awaiting_cloud_tests", "rechecking"):
+            age = (datetime.now(timezone.utc)-datetime.fromisoformat(status["checked_at"])).total_seconds()
+            if age > 2100:
+                status.update(state="retry_pending", remaining_seconds=None,
+                              message="后台更新状态长时间未刷新；等待定时任务重试，未完成安装")
+        return status
+    except (OSError, ValueError, KeyError):
+        return {"state": "not_started", "progress_percent": 0, "message": "自动更新尚未启动，等待后台重试"}
 
 
 def launch_if_needed() -> None:

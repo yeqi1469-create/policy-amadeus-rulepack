@@ -21,3 +21,15 @@ class ProgressTests(unittest.TestCase):
 
     def test_minute_rounding(self):
         self.assertIn("2 分钟", progress_caption({"state": "checking", "remaining_seconds": 61}))
+
+    def test_failed_update_not_shown_as_check_complete(self):
+        text = progress_caption({"state": "review_required", "checked_at": "today",
+            "update_status": {"state": "retry_pending", "progress_percent": 30}})
+        self.assertIn("更新暂停", text)
+        self.assertNotIn("100%", text)
+
+    def test_unknown_update_eta_not_fabricated(self):
+        self.assertIn("正在估算", progress_caption({"update_status": {"state": "reviewing", "progress_percent": 30}}))
+
+    def test_history_based_estimate_label(self):
+        self.assertIn("历史耗时", progress_caption({"update_status": {"state": "reviewing", "remaining_seconds": 300}}))
