@@ -14,6 +14,14 @@ from update_storage import write_json
 
 
 class CodexReviewTests(unittest.TestCase):
+    def test_bundled_git_found_when_desktop_path_has_no_git(self):
+        home = Path(self.temp.name)/"user"
+        bundled = home/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"
+        bundled.parent.mkdir(parents=True)
+        bundled.write_bytes(b"synthetic-git-fixture")
+        with patch.object(worker.shutil, "which", return_value=None), patch.object(worker.Path, "home", return_value=home):
+            self.assertEqual(worker.locate_git(), str(bundled.resolve()))
+
     def test_unrelated_and_repealed_official_endpoints_excluded(self):
         from knowledge_update import COUNTRY_OFFICIAL_SOURCES
         self.assertNotIn("https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482", COUNTRY_OFFICIAL_SOURCES["Lithuania"])

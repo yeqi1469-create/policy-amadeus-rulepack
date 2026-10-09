@@ -494,14 +494,26 @@ def apply_cloud_proposals(root: Path) -> list[str]:
     return applied
 
 
+def locate_git() -> str:
+    configured = configuration().get("git_executable")
+    if configured and Path(configured).is_file() and Path(configured).name.lower() in ("git.exe", "git"):
+        return str(Path(configured).resolve())
+    git = shutil.which("git")
+    if git:
+        return git
+    candidates = [Path(os.environ.get("ProgramFiles", "C:/Program Files"))/"Git/cmd/git.exe",
+                  Path(os.environ.get("LOCALAPPDATA", ""))/"Programs/Git/cmd/git.exe",
+                  Path.home()/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"]
+    candidates.extend(sorted((Path.home()/".cache/codex-runtimes").glob("*/dependencies/native/git/cmd/git.exe")))
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate.resolve())
+    raise ReviewError("未找到 Git 发布工具；已保留待办，等待自动重试")
+
+
 def _repository_session():
     import requests
-    git = shutil.which("git")
-    if not git:
-        git = next((str(p) for p in (Path(os.environ.get("ProgramFiles", "C:/Program Files"))/"Git/cmd/git.exe",
-                   Path(os.environ.get("LOCALAPPDATA", ""))/"Programs/Git/cmd/git.exe") if p.is_file()), None)
-    if not git:
-        raise ReviewError("未找到 Git 发布工具；已保留待办，等待自动重试")
+    git = locate_git()
     result = subprocess.run([git, "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
         capture_output=True, text=True, timeout=60, env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))

@@ -9,6 +9,19 @@ from pathlib import Path
 
 
 def main() -> None:
+    if "--review-health" in sys.argv:
+        from codex_review_worker import locate_git, locate_codex, _repository_session, signed_repository_base, folder
+        from update_storage import write_json
+        result = {"git_found": False, "codex_found": False, "publisher_auth_and_signature": False}
+        try:
+            result["git_found"] = Path(locate_git()).is_file()
+            result["codex_found"] = locate_codex().is_file()
+            _, _, pack = signed_repository_base(_repository_session())
+            result.update(publisher_auth_and_signature=True, rulepack_version=pack["rulepack_version"])
+        except Exception as exc:
+            result["failure_type"] = type(exc).__name__
+        write_json(folder()/"codex_review_health.json", result)
+        return
     if "--auto-review" in sys.argv:
         from codex_review_worker import run
         run()
