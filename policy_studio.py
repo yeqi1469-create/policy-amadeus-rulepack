@@ -378,8 +378,34 @@ class PolicyStudio(tk.Tk):
         entry.pack(fill="x", ipady=9)
         return entry
 
-    def _field_label(self, text: str) -> None:
-        tk.Label(self.content, text=text, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 10, "bold")).pack(anchor="w", pady=(0, 7))
+    def _field_label(self, text: str, parent=None) -> None:
+        tk.Label(parent or self.content, text=text, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 10, "bold")).pack(anchor="w", pady=(0, 7))
+
+    def _form_body(self) -> tk.Frame:
+        """Keep every form control reachable when update messages grow."""
+        self.content.configure(pady=7)
+        viewport = tk.Canvas(self.content, bg=PANEL, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.content, orient="vertical", command=viewport.yview)
+        viewport.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        viewport.pack(side="left", fill="both", expand=True)
+        body = tk.Frame(viewport, bg=PANEL)
+        body_window = viewport.create_window((0, 0), window=body, anchor="nw")
+        body.bind("<Configure>", lambda _e: viewport.configure(scrollregion=viewport.bbox("all")))
+        viewport.bind("<Configure>", lambda e: viewport.itemconfigure(body_window, width=max(1, e.width)))
+        self._result_scroll_canvas = viewport
+        self.bind_all("<MouseWheel>", self._scroll_result)
+        return body
+
+    def _reveal_form_control(self, control) -> None:
+        body = control.master
+        viewport = self._result_scroll_canvas
+        body.update_idletasks()
+        total = max(1, body.winfo_height())
+        top = control.winfo_rooty() - body.winfo_rooty()
+        low, high = viewport.yview()
+        if top < low * total or top + control.winfo_height() > high * total:
+            viewport.yview_moveto(max(0, (top - 12) / total))
 
     def _button(self, parent, text, command, primary=False) -> tk.Button:
         return tk.Button(parent, text=text, command=command, bg=ORANGE if primary else "#343b47", fg=WHITE,
@@ -417,21 +443,24 @@ class PolicyStudio(tk.Tk):
         return None if value == "__CANCEL__" else value
 
     def _country_step(self) -> None:
-        self._heading("步骤 1 / 3", "选择销售国家和输出语言", "销售国家支持多选；政策覆盖全部所选国家，并统一翻译成指定语言。")
-        self._field_label("销售国家（点击展开，可多选）")
+        body = self._form_body()
+        self._heading("步骤 1 / 3", "选择销售国家和输出语言", "销售国家支持多选；政策覆盖全部所选国家，并统一翻译成指定语言。", compact=True, parent=body)
+        self._field_label("销售国家（点击展开，可多选）", body)
         market_button = tk.Button(
-            self.content, textvariable=self.country_display, anchor="w", bg="#1d2430", fg=WHITE,
+            body, textvariable=self.country_display, anchor="w", bg="#1d2430", fg=WHITE,
             activebackground="#293342", activeforeground=WHITE, relief="flat", cursor="hand2",
             font=("Microsoft YaHei UI", 10), padx=10, pady=9, command=self._toggle_country_popup,
         )
         market_button.pack(fill="x")
-        self._field_label("输出政策语言（点击展开，单选）")
+        market_button.bind("<FocusIn>", lambda _e: self._reveal_form_control(market_button))
+        self._field_label("输出政策语言（点击展开，单选）", body)
         language_entry = tk.Button(
-            self.content, textvariable=self.language_display, anchor="w", bg="#1d2430", fg=WHITE,
+            body, textvariable=self.language_display, anchor="w", bg="#1d2430", fg=WHITE,
             activebackground="#293342", activeforeground=WHITE, relief="flat", cursor="hand2",
             font=("Microsoft YaHei UI", 10), padx=10, pady=9, command=self._toggle_language_popup,
         )
         language_entry.pack(fill="x")
+        language_entry.bind("<FocusIn>", lambda _e: self._reveal_form_control(language_entry))
         self._button(self.footer, "下一步", self._next_country, True).pack(side="right")
 
     def _update_country_selection(self) -> None:
@@ -519,18 +548,8 @@ class PolicyStudio(tk.Tk):
         popup.lift()
 
     def _email_step(self) -> None:
-        self.content.configure(pady=7)
-        viewport = tk.Canvas(self.content, bg=PANEL, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(self.content, orient="vertical", command=viewport.yview)
-        viewport.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
-        viewport.pack(side="left", fill="both", expand=True)
-        body = tk.Frame(viewport, bg=PANEL)
-        body_window = viewport.create_window((0, 0), window=body, anchor="nw")
-        body.bind("<Configure>", lambda _e: viewport.configure(scrollregion=viewport.bbox("all")))
-        viewport.bind("<Configure>", lambda e: viewport.itemconfigure(body_window, width=max(1, e.width)))
-        self._result_scroll_canvas = viewport
-        self.bind_all("<MouseWheel>", self._scroll_result)
+        body = self._form_body()
+        viewport = self._result_scroll_canvas
         self._heading("步骤 2 / 3", "输入店铺与客服资料", "这些资料用于明确网站运营者、卖家和客户联系方式。", compact=True, parent=body)
 
         def compact_field(label: str, variable: tk.StringVar, parent=None) -> tk.Entry:
@@ -574,14 +593,15 @@ class PolicyStudio(tk.Tk):
         self._button(self.footer, "下一步", self._next_email, True).pack(side="right")
 
     def _pdf_step(self) -> None:
-        self._heading("步骤 3 / 3", "导入公司执照", "请选择 PDF 格式的公司注册文件或营业执照。")
-        self._field_label("执照 PDF")
-        row = tk.Frame(self.content, bg=PANEL); row.pack(fill="x")
+        body = self._form_body()
+        self._heading("步骤 3 / 3", "导入公司执照", "请选择 PDF 格式的公司注册文件或营业执照。", compact=True, parent=body)
+        self._field_label("执照 PDF", body)
+        row = tk.Frame(body, bg=PANEL); row.pack(fill="x")
         tk.Entry(row, textvariable=self.pdf_path, state="readonly", readonlybackground="#f8fafc", fg="#101827",
                  relief="flat", font=("Microsoft YaHei UI", 10)).pack(side="left", fill="x", expand=True, ipady=10)
         self._button(row, "选择 PDF", self._choose_pdf).pack(side="left", padx=(10, 0))
         phone_text = f"客服电话：{self.phone.get()}"
-        tk.Label(self.content, text=phone_text, bg=PANEL, fg=MUTED,
+        tk.Label(body, text=phone_text, bg=PANEL, fg=MUTED,
                  font=("Microsoft YaHei UI", 9)).pack(anchor="w", pady=(9, 0))
         self._button(self.footer, "上一步", lambda: self.show_step(1)).pack(side="left")
         self._button(self.footer, "完成", self._finish, True).pack(side="right")
