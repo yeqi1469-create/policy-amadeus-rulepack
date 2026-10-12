@@ -542,7 +542,8 @@ def _fingerprint(url: str) -> str:
         # but its TLS handshake can stall through the system proxy. Retry this
         # one official endpoint without inherited proxy variables before
         # classifying Belarus as temporarily unavailable.
-        if "eec.eaeunion.org" not in url:
+        configured_urls={candidate for urls in SOURCES.values() for candidate in urls}
+        if "eec.eaeunion.org" not in url and url not in configured_urls:
             raise
         direct = requests.Session()
         direct.trust_env = False

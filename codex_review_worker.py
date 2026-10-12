@@ -448,7 +448,8 @@ def codex_json(prompt: str, schema: dict, label: str) -> dict:
                    if key not in {"OPENAI_API_KEY", "CODEX_API_KEY", "POLICY_AMADEUS_PUBLISHER_KEY_B64",
                                   "GITHUB_TOKEN", "GH_TOKEN", "DEEPSEEK_API_KEY", "POLICY_AMADEUS_AI_AUDIT_KEY"}}
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    stage = "verifying" if label == "verification" else "reviewing"
+    is_verification=label=='verification' or label.endswith('_verification') or label.startswith('current_chunk_2_')
+    stage = "verifying" if is_verification else "reviewing"
     record("reviewing", stage=stage, operation="检查现有审查账户", operation_limit_seconds=30)
     auth = subprocess.run([str(executable), "login", "status"], capture_output=True,
         text=True, encoding="utf-8", errors="replace", timeout=30, env=environment, creationflags=flags)
@@ -467,8 +468,8 @@ def codex_json(prompt: str, schema: dict, label: str) -> dict:
                     "computer_use", "code_mode_host", "workspace_dependencies", "skill_search", "multi_agent"):
         command.extend(("--disable", feature))
     command.append("-")
-    record("reviewing", stage=stage, operation="独立复核结论" if label == "verification" else "核对正文并形成修复候选",
-           operation_limit_seconds=900, model_round=2 if label == "verification" else 1)
+    record("reviewing", stage=stage, operation="独立复核结论" if is_verification else "核对正文并形成修复候选",
+           operation_limit_seconds=900, model_round=2 if is_verification else 1)
     process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, encoding="utf-8", errors="replace", env=environment, creationflags=flags)
     deadline = time.monotonic()+900
@@ -651,7 +652,7 @@ def validate_proposal(proposal: dict, pack: dict) -> None:
         raise ReviewError("候选编号未匹配官方证据和规则包基础")
     from current_law_review import MODE, validate as validate_current
     if evidence.get('mode') == MODE:
-        validate_current(evidence,decision,verifier)
+        validate_current(evidence,decision,verifier,pack)
     else:
         if evidence.get('additional_documents'):
             raise ReviewError('历史比较提案不能附加未经现行法路径核验的额外来源')
@@ -696,7 +697,7 @@ def validate_proposal(proposal: dict, pack: dict) -> None:
             path = row.get("path", "")
             exclusive = {"United Kingdom": "UK", "Switzerland": "CH", "Turkey": "TR"}.get(country)
             if not path.startswith("/country_overlays/" + country + "/") and not (
-                    exclusive and path.startswith("/coverage_groups/" + exclusive + "/")):
+                    exclusive and path.startswith("/coverage_groups/" + exclusive + "/")) and not path.startswith('/coverage_groups/LOCAL:'+country+'/'):
                 raise ReviewError("单国官方资料不能改写其他国家或共同规则")
     candidate = copy.deepcopy(pack)
     _apply_patches(candidate, patches)
@@ -723,7 +724,10 @@ def _apply_patches(pack: dict, patches: list) -> None:
                     raise ValueError()
                 pack.setdefault(section, {}).setdefault(market, {})
             elif market not in pack[section]:
-                raise ValueError()
+                from knowledge_update import COUNTRY_OFFICIAL_SOURCES
+                if not market.startswith('LOCAL:') or market[6:] not in COUNTRY_OFFICIAL_SOURCES:
+                    raise ValueError()
+                pack[section][market]={}
             target = pack[section][market]
             if len(parts) == 4:
                 if section != "country_overlays" or field != "additional_legal_clauses" or parts[3] not in POLICIES:
@@ -740,7 +744,11 @@ def _apply_patches(pack: dict, patches: list) -> None:
                 overlay_fields.update(statutory_withdrawal_days=int,refund_deadline_days=int,
                     refund_deadline_unit=str,repair_remedy_liability_extension_months=int,
                     objective_conformity_includes_repairability=bool)
-                expected_type = type(target[field]) if field in target else overlay_fields.get(field) if section == "country_overlays" else None
+                local_fields={'statutory_withdrawal_days':int,'refund_deadline_days':int,'commercial_return_days':int,
+                    'refund_deadline_unit':str,'return_shipping_mode':str,'restocking_fee':bool}
+                if section=='coverage_groups' and market.startswith('LOCAL:'):
+                    overlay_fields.update(local_fields)
+                expected_type = type(target[field]) if field in target else overlay_fields.get(field) if section == "country_overlays" or market.startswith('LOCAL:') else None
                 if expected_type is None or type(value) is not expected_type or isinstance(value, (dict, list)):
                     raise ValueError()
                 if isinstance(value, str) and len(value) > 12000:

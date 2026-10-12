@@ -6,6 +6,7 @@ import queue
 import re
 import sys
 import threading
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, ttk
@@ -138,6 +139,12 @@ class PolicyStudio(tk.Tk):
         self._generation_queue: queue.Queue = queue.Queue()
         self._license_queue: queue.Queue = queue.Queue()
         self._license_busy = False
+        self._generation_active=False
+        self._app_handoff_queue=queue.Queue()
+        self._app_handoff_started=False
+        self._app_handoff_result=None
+        self._app_handoff_retry_after=0
+        self._app_handoff_failures=0
         self.step = 0
         self._resize_job = None
         self._background_photo = None
@@ -161,6 +168,7 @@ class PolicyStudio(tk.Tk):
         self.bind("<Configure>", self._schedule_render)
         self.after(30, self._render_background)
         self.show_step(0)
+        self._restore_update_draft()
 
     def destroy(self) -> None:
         if getattr(self,"_destroying",False):
@@ -210,7 +218,70 @@ class PolicyStudio(tk.Tk):
         self.progress_status = status
         self._update_progress()
         self._refresh_update_details()
+        self._automatic_update_handoff(status['app_update_status'])
+        if getattr(self,'_destroying',False): return
         self.after(300 if status.get("state") == "checking" else 1000 if status.get("update_status") else 5000, self._poll_knowledge_check)
+
+    def _draft_config(self):
+        return {'country':self.country.get(),'output_language':self.output_language.get(),
+            'store_name':self.store_name.get(),'website':self.website.get(),'email':self.email.get(),
+            'phone':self.phone.get(),'customs_mode':self.customs_mode.get(),'license_pdf':self.pdf_path.get()}
+
+    def _restore_update_draft(self):
+        from app_updater import _data_dir,installed_version
+        from session_checkpoint import restore,acknowledge
+        path=_data_dir()/'private_session_checkpoint.json'
+        record=restore(path,installed_version())
+        if not record: return
+        from update_storage import write_json
+        write_json(self._config_path(),record['config'])
+        self._load_config()
+        self.show_step(record['step'])
+        acknowledge(path)
+
+    def _automatic_update_handoff(self,status):
+        if not getattr(sys,'frozen',False) or sys.platform!='win32': return
+        if not self._app_handoff_started and time.time()>=self._app_handoff_retry_after and status.get('app') in {'waiting_for_app_exit','installer_inactive'}:
+            self._app_handoff_started=True
+            def prepare():
+                try:
+                    from app_updater import _stage_app_update
+                    self._app_handoff_queue.put(('ok',_stage_app_update(restart_after_install=True,
+                        progress=lambda event:self._app_handoff_queue.put(('progress',event)))))
+                except Exception:
+                    self._app_handoff_queue.put(('failed',None))
+            threading.Thread(target=prepare,daemon=True).start()
+        try:
+            while True:
+                kind,result=self._app_handoff_queue.get_nowait()
+                if kind=='ok': self._app_handoff_result=result
+                elif kind=='progress':
+                    percentage=result.get('download_percent')
+                    caption=result['operation']+(f' · {percentage}%' if percentage is not None else '')
+                    if result.get('remaining_seconds') is not None: caption+=f" · 预计剩余 {result['remaining_seconds']} 秒"
+                    self.software_status.set(caption)
+                else:
+                    self._app_handoff_started=False
+                    self._app_handoff_failures+=1
+                    self._app_handoff_retry_after=time.time()+min(3600,60*2**min(6,self._app_handoff_failures-1))
+                    self.knowledge_status.set('程序安装准备暂未完成，当前资料保留；等待自动重试')
+        except queue.Empty: pass
+        result=self._app_handoff_result
+        if not result or result.get('app') not in {'installation_staged','waiting_for_app_exit'}: return
+        if self._license_busy or self._generation_active:
+            self.knowledge_status.set('新版已验证，等待当前提取或生成完成后自动保存并安装')
+            return
+        try:
+            from app_updater import _data_dir
+            from session_checkpoint import save
+            from update_storage import write_json
+            config=self._draft_config()
+            save(_data_dir()/'private_session_checkpoint.json',result['new_version'],config,self.step,self.policies,self.settings)
+            write_json(self._config_path(),config)
+        except Exception:
+            self.knowledge_status.set('资料自动保存失败，保留当前窗口，不执行自动关闭')
+            return
+        self.destroy()
 
     def _apply_windows_icons(self) -> None:
         """Force native small/large icons so Windows cannot reuse a stale taskbar bitmap."""
@@ -949,6 +1020,7 @@ class PolicyStudio(tk.Tk):
         self.after(100, self._poll_generation)
 
     def _show_generating(self) -> None:
+        self._generation_active=True
         self._clear(self.content)
         self._clear(self.footer)
         self._heading("正在生成", "正在生成并翻译六份政策", "网络翻译可能需要几十秒。窗口可以正常移动，请不要重复点击。")
@@ -975,6 +1047,7 @@ class PolicyStudio(tk.Tk):
         except queue.Empty:
             self.after(100, self._poll_generation)
             return
+        self._generation_active=False
         if status == "error":
             self._app_dialog("无法生成政策", payload)
             self.show_step(2)

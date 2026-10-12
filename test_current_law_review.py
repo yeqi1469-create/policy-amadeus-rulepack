@@ -68,6 +68,19 @@ class FullCurrentRevalidationTests(unittest.TestCase):
         self.assertEqual(parts[0]['start'],0)
         self.assertEqual(parts[-1]['end'],len(text))
         self.assertTrue(all(a['end']==b['start'] for a,b in zip(parts,parts[1:])))
+    def test_every_chunk_both_passes_and_safe_resume_without_repeating_completed_segments(self):
+        self.evidence['after']='Article 1. Synthetic consumer-law provision.\n'*12000
+        self.evidence['new_sha256']=hashlib.sha256(self.evidence['after'].encode()).hexdigest()
+        segment_count=len(current.chunks(self.evidence['after']))
+        segment={'reviewed_entire_chunk':True,'reason':'Full synthetic segment examined',
+                 'findings':[{'quote':'Synthetic consumer-law provision.','requirement':'Synthetic check','policy':'Terms of Service','existing_rule_gap':''}]}
+        replies=[copy.deepcopy(segment) for _ in range(segment_count*2)]+[self.decision,self.verifier]
+        with patch.object(worker,'codex_json',side_effect=replies) as model,patch.object(worker,'record'):
+            current.review(self.evidence,self.pack)
+        self.assertEqual(model.call_count,segment_count*2+2)
+        with patch.object(worker,'codex_json',side_effect=[self.decision,self.verifier]) as resumed,patch.object(worker,'record'):
+            current.review(self.evidence,self.pack)
+        self.assertEqual(resumed.call_count,2)
     def test_actual_templates_render_without_network_or_private_license(self):
         with patch('knowledge_update.run_startup_check',side_effect=AssertionError('No live check in synthetic render')):
             result=current.policy_examples('Country — Lithuania',self.pack)
@@ -75,14 +88,30 @@ class FullCurrentRevalidationTests(unittest.TestCase):
         self.assertEqual(set(result['policies']),worker.POLICIES)
         self.assertIn('Synthetic Verification Store',result['policies']['Contact Information'])
     def test_unsupported_market_not_silently_certified(self):
-        with patch.object(worker,'codex_json') as model:
-            self.evidence['source']='Country — Serbia'
-            with self.assertRaises(worker.ReviewError): current.review(self.evidence,self.pack)
-        model.assert_not_called()
+        import knowledge_update as knowledge
+        self.evidence['source']='Country — Serbia'
+        self.evidence['url']=self.evidence['new_url']=knowledge.SOURCES[self.evidence['source']][0]
+        with self.assertRaises(worker.ReviewError):
+            current.validate(self.evidence,self.decision,self.verifier,self.pack)
+        reference=current.policy_examples(self.evidence['source'],self.pack,allow_uncertified=True)
+        self.assertTrue(reference['uncertified_reference_only'])
     def test_no_progress_does_not_repeat_indefinitely(self):
         failed={'state':'retry_pending','source_errors':{'Country — Serbia':{'failed_at':1}}}
         with patch.object(worker,'_run_one',return_value=failed) as attempt:
             self.assertEqual(worker.run(),failed)
         self.assertEqual(attempt.call_count,2)
+    def test_configured_official_source_can_recover_proxy_failure_with_verified_tls(self):
+        import knowledge_update as knowledge
+        import requests
+        from unittest.mock import Mock
+        direct=Mock()
+        direct.get.return_value=Mock(content=b'<html><article>'+b'Official law article text. '*100+b'</article></html>',
+                                   text='<article>'+('Official law article text. '*100)+'</article>',headers={})
+        url=knowledge.COUNTRY_OFFICIAL_SOURCES['Iceland'][0]
+        with patch('requests.get',side_effect=requests.ConnectionError),patch('requests.Session',return_value=direct):
+            fingerprint=knowledge._fingerprint(url)
+        self.assertEqual(len(fingerprint),64)
+        self.assertFalse(direct.trust_env)
+        self.assertNotIn('verify',direct.get.call_args.kwargs)
 
 if __name__=='__main__': unittest.main()

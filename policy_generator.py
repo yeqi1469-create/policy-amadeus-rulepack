@@ -131,6 +131,9 @@ def legal_coverage(country: str, is_eu: bool) -> tuple[str, tuple[str, ...]]:
     key = {"United Kingdom": "UK", "Switzerland": "CH", "Turkey": "TR"}.get(country)
     if key:
         return key, OFFICIAL_SOURCES[key]
+    local_key=f'LOCAL:{country}'
+    if local_key in load_rulepack().get('coverage_groups',{}):
+        return local_key,tuple(COUNTRY_OFFICIAL_SOURCES[country])
     raise RuntimeError(
         f"{country} 的普通实体商品 B2C 网店规则尚未完成官方来源复核。为避免生成不严谨政策，程序已停止输出该国家。"
     )

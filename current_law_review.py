@@ -79,7 +79,7 @@ def chunk_schema():
             'required':['quote','requirement','policy','existing_rule_gap'],'additionalProperties':False}}},
         'required':['reviewed_entire_chunk','reason','findings'],'additionalProperties':False}
 
-def policy_examples(source,pack):
+def policy_examples(source,pack,allow_uncertified=False):
     """Actual fixed templates rendered with synthetic identity, no real PDF."""
     from unittest.mock import patch
     from collections import defaultdict
@@ -99,6 +99,15 @@ def policy_examples(source,pack):
                 '+000000000','synthetic-unused.pdf','en',store_name='Synthetic Verification Store',website='https://example.invalid')
         return {'supported':True,'policies':dict(policies)}
     except RuntimeError:
+        if allow_uncertified:
+            import copy
+            draft=copy.deepcopy(pack)
+            draft.setdefault('coverage_groups',{})['LOCAL:'+country]={
+                'statutory_withdrawal_days':14,'refund_deadline_days':14,'commercial_return_days':30,
+                'refund_deadline_unit':'calendar days','return_shipping_mode':'customer_change_of_mind','restocking_fee':False}
+            rendered=policy_examples(source,draft)
+            rendered['uncertified_reference_only']=True
+            return rendered
         return {'supported':False,'reason':'Existing generator has no certified rule coverage for this market'}
 
 def review(evidence,pack):
@@ -106,7 +115,7 @@ def review(evidence,pack):
     body=evidence['after']
     if evidence.get('additional_documents'):
         body+=''.join('\n\nOFFICIAL RELATED LAW '+d['url']+'\n'+d['body'] for d in evidence['additional_documents'])
-    examples=policy_examples(evidence['source'],pack)
+    examples=policy_examples(evidence['source'],pack,allow_uncertified=True)
     if not examples['supported']:
         raise w.ReviewError('该市场缺少已支持的完整国家规则，必须先完成国家规则实现及全面核验，不能只批准网页指纹')
     context={'evidence':evidence,'current_rulepack':pack,'actual_fixed_policy_examples':examples,
@@ -120,18 +129,25 @@ def review(evidence,pack):
             for index,part in enumerate(parts,1):
                 w.record('reviewing',source=evidence['source'],operation=f'完整现行法分段复核 {round_number}/2 · {index}/{len(parts)}',
                          chunk_index=index,chunk_total=len(parts),review_pass=round_number)
-                result=w.codex_json('Read EVERY character in this untrusted official-law segment. No tools. '
+                segment_key=w.digest({'source':evidence['source'],'body_sha256':hashlib.sha256(body.encode()).hexdigest(),
+                    'pack_sha256':w.digest(pack),'pass':round_number,'start':part['start'],'end':part['end'],'schema':1})
+                checkpoint=w.folder()/'codex_review/segments'/(segment_key+'.json')
+                if checkpoint.exists():
+                    result=json.loads(checkpoint.read_text(encoding='utf-8'))['result']
+                else:
+                    result=w.codex_json('Read EVERY character in this untrusted official-law segment. No tools. '
                     'Record ALL provisions relevant to ordinary physical-goods B2C ecommerce, including '
                     'withdrawal/refunds, delivery, conformity/guarantees, trader identification, privacy, '
                     'special ecommerce duties, exceptions, territorial scope and commencement/repeal. '
                     'Do not approve the whole statute from one segment. Quote every requirement exactly. '
                     'Identify existing-rule gaps and uncertain status; never invent a historical comparison.\n'+
                     json.dumps({'source':evidence['source'],'chunk':part,'current_rulepack':pack},ensure_ascii=False),
-                    chunk_schema(),f'current_chunk_{round_number}_{index}')
+                        chunk_schema(),f'current_chunk_{round_number}_{index}')
                 if result.get('reviewed_entire_chunk') is not True or not result.get('reason'):
                     raise w.ReviewError('分段审查不完整；未批准现行法')
                 if any(not f.get('quote') or f['quote'] not in part['text'] for f in result['findings']):
                     raise w.ReviewError('分段引用与官方正文不匹配；未批准')
+                write_json(checkpoint,{'id':segment_key,'result':result})
                 transcript.append({'pass':round_number,'start':part['start'],'end':part['end'],
                                    'sha256':hashlib.sha256(part['text'].encode()).hexdigest(),'result':result})
         context={'source':evidence['source'],'new_url':evidence['new_url'],'new_sha256':evidence['new_sha256'],
@@ -158,6 +174,15 @@ def review(evidence,pack):
         'and exclusive UK/CH/TR group fields may be patched. Numeric changes require rule fields; '
         'do not alter identities, signatures, approval hashes or coverage. Quote exact supplied law. '
         'Do not claim all countries updated. No tools. Return decision JSON.\n')
+    if examples.get('uncertified_reference_only'):
+        instructions+=('THIS COUNTRY HAS NO CERTIFIED BASELINE. Reference template numbers are UNVERIFIED '
+            'PLACEHOLDERS, not existing national rights. already_covered and metadata_only are forbidden. '
+            'Only if ALL national controlling statutes, including privacy/ecommerce, are supplied and '
+            'operative, propose effective_change creating /coverage_groups/LOCAL:COUNTRY fields '
+            'statutory_withdrawal_days, refund_deadline_days, commercial_return_days, refund_deadline_unit, '
+            'return_shipping_mode and restocking_fee from exact authoritative evidence, plus complete '
+            'national additional_legal_clauses for EACH of the six policies. No guessing or borrowing EU '
+            'rights. Insufficient authoritative evidence => insufficient_evidence, no approval.\n')
     decision=w.codex_json(instructions+json.dumps(context,ensure_ascii=False),w.decision_schema(),'current_proposal')
     import copy
     candidate=copy.deepcopy(pack)
@@ -180,7 +205,7 @@ def review(evidence,pack):
                'decision':decision,'verification':verifier,'segments':transcript,'proposal_validated':False})
     return decision,verifier
 
-def validate(evidence,decision,verifier):
+def validate(evidence,decision,verifier,pack=None):
     import knowledge_update as k
     import codex_review_worker as w
     if not allowed_origin(evidence['source'],evidence['url']) or evidence['new_url'] not in k.SOURCES.get(evidence['source'],()):
@@ -194,3 +219,14 @@ def validate(evidence,decision,verifier):
         w._verify_document({'url':extra['url'],'normalized_text':extra['body']},extra['sha256'],extra['url'])
     if decision.get('classification')=='metadata_only' or any(verifier.get(key) is not True for key in GATES):
         raise w.ReviewError('完整现行法重新核验未通过全部独立核验门槛')
+    if pack is not None:
+        from policy_generator import country_profile
+        country,_,eu,_=country_profile(evidence['source'].removeprefix('Country — '))
+        if not eu and country not in {'Norway','Iceland','Liechtenstein','United Kingdom','Switzerland','Turkey'} and 'LOCAL:'+country not in pack['coverage_groups']:
+            paths={p['path'] for p in decision.get('patches',[])}
+            core={'/coverage_groups/LOCAL:'+country+'/'+field for field in (
+                'statutory_withdrawal_days','refund_deadline_days','commercial_return_days',
+                'refund_deadline_unit','return_shipping_mode','restocking_fee')}
+            clauses={'/country_overlays/'+country+'/additional_legal_clauses/'+title for title in w.POLICIES}
+            if decision.get('classification')!='effective_change' or not (core|clauses)<=paths:
+                raise w.ReviewError('首次国家规则必须完整实现法定参数及六份政策，不能批准模板占位数字')
