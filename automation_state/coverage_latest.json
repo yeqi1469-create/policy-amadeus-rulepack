@@ -21,7 +21,7 @@
       "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1": "109159d7e7b84198efe600ff16ecedbe2ac6bdfe02aec029d49e4210c7f4ef7a"
     }
   },
-  "checked_at": "2026-10-12T12:59:49.600915+00:00",
+  "checked_at": "2026-10-12T13:17:34.831023+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -33,6 +33,7 @@
     "Country — Serbia"
   ],
   "unreachable": [
+    "Turkey distance contracts",
     "Country — Romania",
     "Country — Iceland",
     "Germany BGB"
@@ -204,7 +205,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600712+00:00"
+      "checked_at": "2026-10-12T13:17:34.830823+00:00"
     },
     "Czechia": {
       "status": "source_fingerprint_no_change",
@@ -249,7 +250,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600744+00:00"
+      "checked_at": "2026-10-12T13:17:34.830854+00:00"
     },
     "Slovakia": {
       "status": "source_fingerprint_no_change",
@@ -282,11 +283,12 @@
     "Serbia": {
       "status": "source_changed",
       "official_sources_reached": [
-        "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1"
+        "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1",
+        "https://www.parlament.gov.rs/upload/archive/files/lat/pdf/zakoni/14_saziv/1317-26-lat..pdf"
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600769+00:00"
+      "checked_at": "2026-10-12T13:17:34.830879+00:00"
     },
     "Lithuania": {
       "status": "source_changed",
@@ -295,7 +297,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600775+00:00"
+      "checked_at": "2026-10-12T13:17:34.830885+00:00"
     },
     "Slovenia": {
       "status": "source_fingerprint_no_change",
@@ -316,7 +318,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600787+00:00"
+      "checked_at": "2026-10-12T13:17:34.830897+00:00"
     },
     "Estonia": {
       "status": "source_fingerprint_no_change",
@@ -344,7 +346,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600804+00:00"
+      "checked_at": "2026-10-12T13:17:34.830915+00:00"
     },
     "Bosnia and Herzegovina": {
       "status": "source_fingerprint_no_change",
@@ -433,7 +435,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:59:49.600860+00:00"
+      "checked_at": "2026-10-12T13:17:34.830969+00:00"
     },
     "Luxembourg": {
       "status": "source_fingerprint_no_change",
@@ -515,46 +517,43 @@
     "state": "cloud_source_run"
   },
   "mode": "incremental",
-  "last_full_checked_at": "2026-10-12T12:59:49.600921+00:00",
+  "last_full_checked_at": "2026-10-12T13:17:34.831028+00:00",
   "observed_source_fingerprints": {
-    "EU GDPR obligations": {
-      "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
-    },
     "EU Sale of Goods Directive": {
       "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
     "EU Consumer Rights Directive": {
       "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
+    "EU GDPR obligations": {
+      "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
+    },
     "UK distance selling": {
       "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
     },
     "Swiss ecommerce obligations": {
-      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
       "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
-      "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722",
-      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402"
+      "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402",
+      "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de"
     },
-    "Turkey distance contracts": {
-      "https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme": "f0017a5ee78cc75f8ad40fce889e99bee781f5c167f78a1f25f926d45c63e2f1"
+    "Country — Latvia": {
+      "https://likumi.lv/ta/id/96619": "13348ff5cc478275b1ad6fced90f4e41e2838da084bc9e3406a7b9702b6cb0cb",
+      "https://likumi.lv/ta/id/300099": "1b028487449cb73a87a7dbddccd13fc3686c472153c8c36707f4e77e092d7125",
+      "https://likumi.lv/ta/id/266462": "a0030d6532fa24c3ea056b8c10bc3722f0612c678498834166bc731fe93bf5a8",
+      "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
     },
     "Country — Lithuania": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr": "9a82b12f14eb0553c84eed5d1a1c9036857dd62788e0cf9360af25f27f1cc1ed"
     },
-    "Country — Latvia": {
-      "https://likumi.lv/ta/id/300099": "1b028487449cb73a87a7dbddccd13fc3686c472153c8c36707f4e77e092d7125",
-      "https://likumi.lv/ta/id/96619": "13348ff5cc478275b1ad6fced90f4e41e2838da084bc9e3406a7b9702b6cb0cb",
-      "https://likumi.lv/ta/id/266462": "a0030d6532fa24c3ea056b8c10bc3722f0612c678498834166bc731fe93bf5a8",
-      "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
+    "Country — Ukraine": {
+      "https://zakon.rada.gov.ua/laws/show/1023-12/print": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201"
     },
     "Country — Montenegro": {
       "https://www.sluzbenilist.me/propisi/390427": "6bdaea5ee26a0d9a1cfc4dda1578160b59f9fec2e115c6ff49b572de8502dd38",
       "https://wapi.gov.me/download/49d8cec5-9723-461b-9297-d3a6a5c2c7a8?version=1.0": "d3ea37f8acca3cc6a3e940b9b5054e2fdbd072e3b8077694a6252b78f852f7b7"
     },
-    "Country — Ukraine": {
-      "https://zakon.rada.gov.ua/laws/show/1023-12/print": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201"
-    },
     "Country — Serbia": {
+      "https://www.parlament.gov.rs/upload/archive/files/lat/pdf/zakoni/14_saziv/1317-26-lat..pdf": "96801dfc69a0f40487247dce8cc20faf28a384ffb996ab187433c7b03a796ac1",
       "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1": "109159d7e7b84198efe600ff16ecedbe2ac6bdfe02aec029d49e4210c7f4ef7a"
     }
   },
