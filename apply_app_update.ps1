@@ -52,7 +52,7 @@ try {
         $selectedVersion = @(Get-AppVersionParts ([string]$selection.version))
         $ownVersion = @(Get-AppVersionParts $CandidateVersion)
         $newerSelected = $selectedVersion.Count -eq 2 -and $ownVersion.Count -eq 2 -and (
-            $selectedVersion[0] -gt $ownVersion[0] -or ($selectedVersion[0] -eq $ownVersion[0] -and $selectedVersion[1] -gt $ownVersion[1]))
+            $selectedVersion[0] -gt $ownVersion[0] -or ($selectedVersion[0] -eq $ownVersion[0] -and $selectedVersion[1] -ge $ownVersion[1]))
         $unknownVersionWithLiveReplacement = $ownVersion.Count -eq 0 -and $selectionAlive -and (Test-Path -LiteralPath $selection.staged)
         if ($selection.sha256 -ne $ExpectedHash -and ($newerSelected -or $unknownVersionWithLiveReplacement)) {
             # Keep rejecting obsolete helpers even after the newer helper

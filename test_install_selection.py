@@ -22,7 +22,7 @@ class InstallSelectionTests(unittest.TestCase):
             result = subprocess.run(["powershell.exe","-NoProfile","-NonInteractive","-ExecutionPolicy","Bypass",
                 "-File",str(Path("apply_app_update.ps1").resolve()),"-ParentPid",str(os.getpid()),
                 "-Target",str(target),"-Staged",str(old),"-ExpectedHash",hashlib.sha256(old.read_bytes()).hexdigest(),
-                "-StatusFile",str(root/"status.json"),"-CandidateVersion","2026.10.12-4"],capture_output=True,timeout=20)
+                "-StatusFile",str(root/"status.json"),"-CandidateVersion","2026.10.12-5"],capture_output=True,timeout=20)
             self.assertEqual(result.returncode,0)
             self.assertEqual(json.loads((root/"status.json").read_text(encoding="utf-8-sig"))["state"],"superseded")
             self.assertEqual(target.read_bytes(),b"already installed newer application")
