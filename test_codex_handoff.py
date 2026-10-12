@@ -136,7 +136,7 @@ class HandoffTests(unittest.TestCase):
         self.assertEqual(bridge.read("app_install_status.json")["state"],"installed")
 
     def test_verified_large_snapshot_not_misreported_as_missing(self):
-        body = "Applicable official consumer-law body. " * 10000
+        body = "Applicable official consumer-law body. " * 60000
         digest = hashlib.sha256(body.encode()).hexdigest()
         write_json(worker.folder()/"codex_review/evidence"/(digest+".json"), {"url":self.url,"normalized_text":body})
         with patch.object(worker, "_http_json") as remote:
@@ -144,6 +144,14 @@ class HandoffTests(unittest.TestCase):
                 worker.prior_document(digest, self.url)
         remote.assert_not_called()
         self.assertEqual(bridge.category("官方正文已取得，超出单次自动审查容量"), "large_document")
+
+    def test_377k_historical_snapshot_is_retained_for_lossless_review(self):
+        body = "Applicable official consumer-law body. " * 10000
+        digest = hashlib.sha256(body.encode()).hexdigest()
+        write_json(worker.folder()/"codex_review/evidence"/(digest+".json"), {"url":self.url,"normalized_text":body})
+        with patch.object(worker,"_http_json") as remote:
+            self.assertEqual(worker.prior_document(digest,self.url)["normalized_text"],body)
+        remote.assert_not_called()
 
     def test_ticket_does_not_close_when_report_or_approval_missing(self):
         bridge.submit(self.failure)
@@ -169,6 +177,24 @@ class HandoffTests(unittest.TestCase):
         with patch.object(worker, "_http_json") as remote:
             self.assertEqual(worker.prior_document(digest,self.url), doc)
         remote.assert_not_called()
+
+    def test_signed_migration_closes_only_after_fresh_approved_alternate_observation(self):
+        from knowledge_update import SOURCES
+        modern,legacy = SOURCES["Country — Finland"]
+        self.failure["source_errors"] = {"Country — Finland":{"reason":"large_document"}}
+        write_json(bridge.folder()/"knowledge_coverage_latest.json",{"changed":["Country — Finland"],
+            "pending_source_fingerprints":{"Country — Finland":{legacy:"c"*64}}})
+        bridge.submit(self.failure)
+        pack = {"rulepack_version":"fixture","reviewed_source_fingerprints":{"Country — Finland":{modern:"b"*64}},
+            "reviewed_source_replacements":{"Country — Finland":{legacy:{"url":modern,"sha256":"b"*64}}}}
+        for actual,closed in (("a"*64,False),("b"*64,True)):
+            write_json(bridge.folder()/"knowledge_coverage_latest.json",{"changed":[],"unreachable":[],
+                "rulepack_version":"fixture","observed_source_fingerprints":{"Country — Finland":{legacy:"c"*64,modern:actual}}})
+            with patch("rulepack_manager.load_rulepack",return_value=pack):
+                bridge.reconcile()
+            tickets=[t for t in bridge.read("codex_repair_requests.json")["requests"].values() if t["source"]=="Country — Finland"]
+            self.assertTrue(tickets)
+            self.assertEqual(all(t["state"]=="resolved" for t in tickets),closed)
 
     def test_mismatched_prior_snapshot_is_not_used(self):
         digest = "a"*64

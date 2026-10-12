@@ -250,7 +250,20 @@ def reconcile(status=None):
             elif source not in set(report.get("changed", [])) | set(report.get("unreachable", [])) and report.get("rulepack_version") == pack["rulepack_version"]:
                 observed = report.get("observed_source_fingerprints", {}).get(source, {})
                 approved = pack.get("reviewed_source_fingerprints", {}).get(source, {})
-                resolved = bool(observed) and all(approved.get(url) == digest for url, digest in observed.items())
+                replacements = pack.get("reviewed_source_replacements", {}).get(source,{})
+                from knowledge_update import SOURCES
+                def verified_endpoint(url,digest):
+                    if approved.get(url) == digest:
+                        return True
+                    replacement = replacements.get(url,{})
+                    target,expected = replacement.get("url"),replacement.get("sha256")
+                    # Same signed, explicit migration requirements as the
+                    # detector: a fresh matching observation of the approved
+                    # configured alternate. Never trust a replacement name
+                    # alone or infer that a reachable portal is equivalent.
+                    return bool(url in SOURCES.get(source,()) and target in SOURCES.get(source,())
+                        and expected and approved.get(target) == expected and observed.get(target) == expected)
+                resolved = bool(observed) and all(verified_endpoint(url,digest) for url,digest in observed.items())
             if resolved and ticket.get("state") != "resolved":
                 ticket.update(state="resolved", resolved_at=datetime.now(timezone.utc).isoformat(),
                               resolution="实际运行或签名来源复核通过", rulepack_version=pack["rulepack_version"])

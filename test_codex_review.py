@@ -58,6 +58,57 @@ class CodexReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(worker.ReviewError, '没有法条正文'):
             worker._verify_document({'url':url,'normalized_text':text},digest,url)
 
+    def large_evidence(self, before, after):
+        return {**self.evidence,"before":before,"after":after,
+                "old_sha256":hashlib.sha256(before.encode()).hexdigest(),
+                "new_sha256":hashlib.sha256(after.encode()).hexdigest()}
+
+    def test_complete_377k_document_is_not_confused_with_prompt_capacity(self):
+        text = "full official law " * 22000
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        self.assertEqual(worker._verify_document({"url":self.url,"normalized_text":text},digest,self.url),text)
+
+    def test_lossless_view_retains_full_current_and_every_old_character(self):
+        # Distinct tokens keep this synthetic comparison fast and test exact
+        # offsets, whitespace, insertions, deletions and replacement together.
+        body = " ".join("Article%06d" % n for n in range(35000))
+        before = "  " + body + "\nOld withdrawal protection.\t"
+        after = "  " + body.replace("Article015000", "Revised015000") + "\n"
+        evidence = self.large_evidence(before,after)
+        view = worker.lossless_review_evidence(evidence)
+        self.assertEqual(view["after"],after)
+        self.assertNotIn("before",view)
+        chunks, cursor = [], 0
+        for edit in view["reverse_edits"]:
+            chunks.extend((after[cursor:edit["new_start"]],edit["old_text"]))
+            cursor = edit["new_end"]
+        chunks.append(after[cursor:])
+        self.assertEqual("".join(chunks),before)
+        self.assertIn("Old withdrawal protection.",json.dumps(view))
+
+    def test_lossless_view_checks_both_hashes_before_review(self):
+        evidence = self.large_evidence("Full old official body. "*17000,"Full new official body. "*17000)
+        evidence["old_sha256"] = "f"*64
+        with self.assertRaises(worker.ReviewError):
+            worker.lossless_review_evidence(evidence)
+
+    def test_lossless_still_refuses_unbounded_distinct_documents(self):
+        before = " ".join("Old%06d"%n for n in range(65000))
+        after = " ".join("New%06d"%n for n in range(65000))
+        with self.assertRaises(worker.EvidenceTooLarge):
+            worker.lossless_review_evidence(self.large_evidence(before,after))
+
+    def test_both_independent_reviews_receive_identical_complete_view(self):
+        body = " ".join("Provision%06d"%n for n in range(30000))
+        evidence = self.large_evidence(body,body.replace("Provision015000","Changed015000"))
+        with patch.object(worker,"codex_json",side_effect=[self.decision,self.verifier]) as model:
+            worker.review(evidence,self.pack)
+        self.assertEqual(model.call_count,2)
+        prompts = [call.args[0] for call in model.call_args_list]
+        for prompt in prompts:
+            self.assertIn(evidence["after"],prompt)
+            self.assertIn('"old_text": "Provision015000 "',prompt)
+
     def test_bundled_git_found_when_desktop_path_has_no_git(self):
         home = Path(self.temp.name)/"user"
         bundled = home/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"
