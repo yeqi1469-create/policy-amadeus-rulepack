@@ -99,6 +99,13 @@ class HandoffTests(unittest.TestCase):
         self.assertIn("已调查",caption)
         self.assertNotIn("等待接手",caption)
 
+    def test_old_investigation_and_new_evidence_do_not_appear_unhandled(self):
+        caption=activity_caption({"update_status":{"state":"retry_pending","handoff":{
+            "state":"awaiting_chat","awaiting_evidence":3}}})
+        self.assertIn("已有调查记录",caption)
+        self.assertIn("新增证据",caption)
+        self.assertNotIn("等待接手",caption)
+
     def test_install_wait_is_not_claimed_legal_verification(self):
         bridge.submit(self.failure)
         ids=list(bridge.read("codex_repair_requests.json")["requests"])

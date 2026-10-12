@@ -38,6 +38,8 @@ def handoff_label(update):
     if state == "awaiting_verification":
         return "已调查，等待程序安装与法律证据复核"
     if state == "awaiting_chat":
+        if handoff.get("awaiting_evidence"):
+            return "已有调查记录；新增证据仍待当前聊天复核"
         return "修复请求已排入当前聊天，等待接手"
     if state == "queued":
         return "工单已保存；聊天发送失败，等恢复连接重试" if handoff.get("delivery_failed") else "工单已保存，准备按需发送当前聊天"
