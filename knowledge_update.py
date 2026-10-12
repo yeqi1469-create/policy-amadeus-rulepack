@@ -185,6 +185,9 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
     ),
     "Ukraine": (
         "https://zakon.rada.gov.ua/laws/show/1023-12",
+        "https://zakon.rada.gov.ua/laws/show/1023-12/print",
+        # Historical comparison pages remain diagnostic alternatives, not
+        # automatically equivalent current statutes; reject shells explicitly.
         "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119",
         "https://zakon.rada.gov.ua/go/1023-12",
     ),

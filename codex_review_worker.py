@@ -233,9 +233,36 @@ def runtime_monitor():
         thread.join(timeout=1)
 
 
-def _http_json(url: str) -> dict:
+def _read_get(url: str, *, session=None, timeout=(10, 30), **kwargs):
+    """Retry idempotent reads only. Never repeat a possibly committed write."""
     import requests
-    response = requests.get(url, timeout=(15, 60))
+    from urllib.parse import urlparse
+    getter = session.get if session is not None else requests.get
+    for attempt in range(3):
+        try:
+            current = json.loads((folder()/"codex_review_status.json").read_text(encoding="utf-8"))
+            if current.get("worker_pid") == os.getpid() and current.get("state") in (
+                    "preparing", "fetching_evidence", "reviewing", "publishing", "awaiting_cloud_tests", "rechecking"):
+                record(current["state"], stage=current.get("stage", current["state"]),
+                       operation=f"读取签名发布源：{urlparse(url).hostname} · 尝试 {attempt+1}/3",
+                       operation_limit_seconds=sum(timeout)+5,
+                       transport_attempt=attempt+1, transport_total=3)
+        except (OSError, ValueError):
+            pass
+        try:
+            response = getter(url, timeout=timeout, **kwargs)
+            if response.status_code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
+                return response
+            response.close()
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt == 2:
+                raise
+        time.sleep((1, 3)[attempt])
+    raise RuntimeError("Unreachable read retry state")
+
+
+def _http_json(url: str) -> dict:
+    response = _read_get(url)
     response.raise_for_status()
     return response.json()
 
@@ -246,6 +273,9 @@ def _verify_document(doc: dict, expected: str, url: str) -> str:
         raise ReviewError("缺少完整官方法律正文；自动重试备用来源")
     if hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest() != expected:
         raise ReviewError("官方正文证据与指纹不匹配")
+    from urllib.parse import urlparse
+    if urlparse(url).hostname == "zakon.rada.gov.ua" and not re.search(r"(?:Стаття|Article)\s+\d", text, re.I):
+        raise ReviewError("乌克兰历史记录只有页面信息、没有法条正文；需要重新核验，不能据此批准法律变化")
     if len(text) > 350_000:
         raise EvidenceTooLarge(f"官方正文已取得（{len(text)} 字符），超出单次自动审查容量；需要分段核验，未截断或批准")
     return text
@@ -670,7 +700,10 @@ def _repository_session():
 
 
 def _api(session, method, route, **kwargs):
-    response = session.request(method, API + route, timeout=kwargs.pop("timeout", (15, 90)), **kwargs)
+    if method.upper() == "GET":
+        response = _read_get(API+route, session=session, timeout=kwargs.pop("timeout", (10,30)), **kwargs)
+    else:
+        response = session.request(method, API+route, timeout=kwargs.pop("timeout", (15,90)), **kwargs)
     if response.status_code not in (200, 201):
         raise ReviewError(f"自动发布接口失败（HTTP {response.status_code}）；稍后重试")
     return response.json()
@@ -713,7 +746,7 @@ def signed_repository_base(session) -> tuple[str, str, dict]:
     tree = _api(session, "GET", "/git/commits/" + head)["tree"]["sha"]
     manifest = _http_json(RAW + "/" + head + "/manifest.json")
     import requests
-    payload = requests.get(RAW + "/" + head + "/legal_rulepack.json", timeout=(15, 60))
+    payload = _read_get(RAW + "/" + head + "/legal_rulepack.json")
     payload.raise_for_status()
     if manifest["sha256"] != hashlib.sha256(payload.content).hexdigest():
         raise ReviewError("发布端规则包尚未签名完成；稍后重试，不基于未批准规则审查")
@@ -742,6 +775,8 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
     with worker_lock() as acquired, runtime_monitor():
         if not acquired:
             return {"state": "already_running"}
+        source_errors = {}
+        repository_ready = False
         try:
             report = json.loads((folder() / "knowledge_coverage_latest.json").read_text(encoding="utf-8"))
             if not report.get("changed"):
@@ -749,6 +784,7 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             previous_state = {}
             try:
                 previous_state = json.loads((folder() / "codex_review_status.json").read_text(encoding="utf-8"))
+                source_errors = dict(previous_state.get("source_errors", {}))
                 previous_time = datetime.fromisoformat(previous_state["checked_at"])
                 if not retry_now and previous_state.get("state") == "retry_pending" and (datetime.now(timezone.utc)-previous_time).total_seconds() < 3600:
                     return previous_state
@@ -756,9 +792,10 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                 pass
             record("preparing", source=None, source_index=0, source_total=len(report["changed"]),
                    operation="检查发布授权与签名规则基线", operation_limit_seconds=240,
-                   message="正在检查发布授权与签名规则基线")
+                   message="正在检查发布授权与签名规则基线", source_errors=source_errors)
             session = _repository_session()
             head, tree, pack = signed_repository_base(session)
+            repository_ready = True
             cache = json.loads((folder() / "knowledge_source_state.json").read_text(encoding="utf-8"))["sources"]
             source_errors = dict(previous_state.get("source_errors", {}))
             evidence = None
@@ -859,6 +896,7 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                 source_errors[source] = {"failed_at": time.time(), "reason": message}
             return record("retry_pending", message=message,
                           **failure_details(exc), source_errors=locals().get("source_errors", {}),
+                          failure_source="__worker__" if not repository_ready else None,
                           proposal_id=locals().get("proposal_id"), commit=locals().get("commit"))
 
 

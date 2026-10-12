@@ -5,6 +5,34 @@ from official_document import extract_official_document
 
 
 class OfficialDocumentTests(unittest.TestCase):
+    def test_rada_extracts_statute_not_revision_menu_or_browser_warning(self):
+        url = 'https://zakon.rada.gov.ua/go/1023-12'
+        law = 'Стаття 1. Права споживачів. ' * 80
+        def page(date):
+            return f'<main>Browser warning {date}<div id="article" class="valid">{law}</div><aside>Share {date}</aside></main>'
+        self.assertEqual(extract_official_document(page('today'),url), law.strip())
+        self.assertEqual(extract_official_document(page('today'),url), extract_official_document(page('tomorrow'),url))
+        self.assertNotEqual(extract_official_document(page('today'),url), extract_official_document(page('today').replace('Права','Нові права'),url))
+
+    def test_rada_large_comparison_shell_is_not_statute(self):
+        html = '<main>' + 'Document valid revision export ' * 1000 + '</main>'
+        with self.assertRaisesRegex(ValueError, 'shell'):
+            extract_official_document(html, 'https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119')
+        with self.assertRaises(ValueError):
+            extract_official_document('<div id="article">Metadata </div>'*300, 'https://zakon.rada.gov.ua/laws/show/1023-12')
+
+    def test_rada_shell_not_written_as_trusted_evidence(self):
+        import os, tempfile
+        from pathlib import Path
+        from unittest.mock import Mock, patch
+        from knowledge_update import _fingerprint
+        html = '<main>Export revision metadata </main>' * 1000
+        response = Mock(headers={'content-type':'text/html'}, content=html.encode(), text=html)
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, POLICY_AMADEUS_EVIDENCE_DIR=directory), patch('requests.get',return_value=response):
+            with self.assertRaises(ValueError):
+                _fingerprint('https://zakon.rada.gov.ua/laws/show/1023-12')
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
     def test_moldova_view_count_is_not_document_text(self):
         url = 'https://consumator.gov.md/en/node/575'
         def page(views, days):

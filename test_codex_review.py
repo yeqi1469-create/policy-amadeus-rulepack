@@ -40,6 +40,24 @@ class CodexReviewTests(unittest.TestCase):
         self.assertEqual(result["missing_module"], "synthetic_dependency")
         self.assertEqual(json.loads((worker.folder()/"knowledge_coverage_latest.json").read_text(encoding="utf-8")), report)
 
+    def test_repository_failure_keeps_country_errors_and_marks_global_fault(self):
+        import requests
+        self.enable()
+        write_json(worker.folder()/"knowledge_coverage_latest.json", {"changed":[self.source]})
+        errors = {self.source:{"reason":"official source unavailable", "failed_at":1}}
+        write_json(worker.folder()/"codex_review_status.json", {"source_errors":errors})
+        with patch.object(worker, "_repository_session", side_effect=requests.ReadTimeout()):
+            result = worker._run_one(retry_now=True)
+        self.assertEqual(result["source_errors"], errors)
+        self.assertEqual(result["failure_source"], "__worker__")
+
+    def test_historical_rada_metadata_not_approved_as_legal_text(self):
+        url = 'https://zakon.rada.gov.ua/go/1023-12'
+        text = 'Document revision share export browser warning. ' * 80
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        with self.assertRaisesRegex(worker.ReviewError, '没有法条正文'):
+            worker._verify_document({'url':url,'normalized_text':text},digest,url)
+
     def test_bundled_git_found_when_desktop_path_has_no_git(self):
         home = Path(self.temp.name)/"user"
         bundled = home/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"

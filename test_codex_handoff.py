@@ -39,6 +39,15 @@ class HandoffTests(unittest.TestCase):
         self.assertNotIn("secret-token", json.dumps(queue))
         self.assertEqual(bridge.summary()["state"], "queued")
 
+    def test_global_fault_and_country_errors_both_retained(self):
+        bridge.submit({**self.failure,"failure_source":"__worker__", "failure_type":"ReadTimeout"})
+        requests = bridge.read("codex_repair_requests.json")["requests"]
+        self.assertEqual({row["source"] for row in requests.values()}, {self.source, "__worker__"})
+
+    def test_null_failure_source_is_safe(self):
+        bridge.submit({"state":"retry_pending","failure_source":None,"failure_type":"ReadTimeout"})
+        self.assertEqual(bridge.summary()["pending"],1)
+
     def test_event_dispatch_is_once_not_recurring(self):
         bridge.submit(self.failure)
         with patch.object(worker, "locate_codex", return_value=Path("synthetic-codex.exe")), patch("subprocess.run", return_value=Mock(returncode=0)) as call:

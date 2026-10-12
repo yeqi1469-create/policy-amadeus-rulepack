@@ -84,8 +84,8 @@ def submit(status):
     from knowledge_update import SOURCES
     report = read("knowledge_coverage_latest.json")
     errors = dict(status.get("source_errors", {}))
-    if status.get("state") == "retry_pending" and not errors:
-        errors[status.get("failure_source", "__worker__")] = {"reason": status.get("failure_type", "")+" "+status.get("message", "")}
+    if status.get("state") == "retry_pending" and (not errors or status.get("failure_source") in ("__worker__", "__app_update__")):
+        errors[status.get("failure_source") or "__worker__"] = {"reason": status.get("failure_type", "")+" "+status.get("message", "")}
     now = datetime.now(timezone.utc).isoformat()
     with ticket_lock():
         queue = read("codex_repair_requests.json", {"schema": 1, "requests": {}})

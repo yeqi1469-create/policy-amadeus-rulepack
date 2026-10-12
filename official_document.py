@@ -116,10 +116,18 @@ def extract_official_document(html: str, source_url: str) -> str | None:
     host = (urlparse(source_url).hostname or '').lower()
     if host.endswith('finlex.fi') and 'self.__next_f.push' in html:
         return _finlex_text(html)
-    if host not in {'www.ris.bka.gv.at', 'ris.bka.gv.at', 'guichet.public.lu', 'etalonline.by', 'www.etalonline.by', 'consumator.gov.md'}:
+    if host not in {'www.ris.bka.gv.at', 'ris.bka.gv.at', 'guichet.public.lu', 'etalonline.by', 'www.etalonline.by', 'consumator.gov.md', 'zakon.rada.gov.ua'}:
         return None
     document = _Document(html)
     nodes = list(_nodes(document.root))
+    if host == 'zakon.rada.gov.ua':
+        bodies = [node for node in nodes if node.attrs.get('id') == 'article']
+        text = ' '.join(' '.join(_text(node) for node in bodies).split())
+        # Rada's comparison route can return a full-size page without the
+        # statute. Dates, revision menus and export metadata are not law text.
+        if len(text) < 1000 or not re.search(r'(?:Стаття|Article)\s+\d', text, re.I):
+            raise ValueError('Rada returned a metadata/comparison shell without statute articles')
+        return text
     if host == 'consumator.gov.md':
         articles = [node for node in nodes if node.tag == 'article' and node.attrs.get('data-history-node-id')]
         bodies = [node for article in articles for node in _nodes(article)
