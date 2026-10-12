@@ -193,7 +193,7 @@ def _stage_app_update() -> dict[str, object]:
                 ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                  "-WindowStyle", "Hidden", "-File", str(helper), "-ParentPid", str(os.getpid()),
                  "-Target", str(Path(sys.executable).resolve()), "-Staged", str(staged),
-                 "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json")],
+                 "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json"), "-CandidateVersion", version],
                 creationflags=flags, stdout=log, stderr=subprocess.STDOUT,
             )
         try:

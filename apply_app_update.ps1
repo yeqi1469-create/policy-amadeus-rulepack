@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Target,
     [Parameter(Mandatory = $true)][string]$Staged,
     [Parameter(Mandatory = $true)][string]$ExpectedHash,
-    [Parameter(Mandatory = $true)][string]$StatusFile
+    [Parameter(Mandatory = $true)][string]$StatusFile,
+    [string]$CandidateVersion = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,6 +22,12 @@ function Get-UpdateHash([string]$Path) {
         $algorithm.Dispose()
         $inputStream.Dispose()
     }
+}
+function Get-AppVersionParts([string]$Version) {
+    if ($Version -match '^(\d{4}\.\d{2}\.\d{2})-(\d{1,9})$') {
+        return @([DateTime]::ParseExact($Matches[1], 'yyyy.MM.dd', [Globalization.CultureInfo]::InvariantCulture).Ticks, [long]$Matches[2])
+    }
+    return @()
 }
 try {
     while ((Get-Date) -lt $deadline) {
@@ -42,9 +49,15 @@ try {
     if (Test-Path -LiteralPath $pendingSelection) {
         $selection = Get-Content -LiteralPath $pendingSelection -Raw | ConvertFrom-Json
         $selectionAlive = $selection.helper_pid -and (Get-Process -Id $selection.helper_pid -ErrorAction SilentlyContinue)
-        if ($selectionAlive -and $selection.sha256 -ne $ExpectedHash -and (Test-Path -LiteralPath $selection.staged)) {
-            # A newer, verified download has its own live installer. This old
-            # helper must never race it or downgrade the executable.
+        $selectedVersion = @(Get-AppVersionParts ([string]$selection.version))
+        $ownVersion = @(Get-AppVersionParts $CandidateVersion)
+        $newerSelected = $selectedVersion.Count -eq 2 -and $ownVersion.Count -eq 2 -and (
+            $selectedVersion[0] -gt $ownVersion[0] -or ($selectedVersion[0] -eq $ownVersion[0] -and $selectedVersion[1] -gt $ownVersion[1]))
+        $unknownVersionWithLiveReplacement = $ownVersion.Count -eq 0 -and $selectionAlive -and (Test-Path -LiteralPath $selection.staged)
+        if ($selection.sha256 -ne $ExpectedHash -and ($newerSelected -or $unknownVersionWithLiveReplacement)) {
+            # Keep rejecting obsolete helpers even after the newer helper
+            # exits and deletes its staging file. PID liveness alone is not
+            # sufficient to prevent an old helper downgrading the installation.
             @{ state = 'superseded'; checked_at = (Get-Date).ToString('o') } |
                 ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
             return
