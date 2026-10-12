@@ -6,6 +6,15 @@ import knowledge_update as knowledge
 from update_storage import write_json
 
 class TransientReviewRecovery(unittest.TestCase):
+    def test_country_laws_are_not_alternate_representations(self):
+        self.assertFalse(worker.same_statute_endpoint('https://likumi.lv/ta/id/23309',
+                                                      'https://likumi.lv/ta/id/300099'))
+        self.assertFalse(worker.same_statute_endpoint('https://likumi.lv/ta/id/23309',
+                                                      'https://likumi.lv/ta/id/266462'))
+        self.assertTrue(worker.same_statute_endpoint(
+            'https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32011L0083',
+            'https://eur-lex.europa.eu/legal-content/EN/TXT/XML/?uri=CELEX:32011L0083'))
+
     def test_review_recovers_temporary_failure_without_approving_hash(self):
         with tempfile.TemporaryDirectory() as directory,patch.dict(os.environ,{'LOCALAPPDATA':directory}):
             source='Country — Serbia'

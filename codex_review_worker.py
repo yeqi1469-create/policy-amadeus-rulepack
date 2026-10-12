@@ -331,6 +331,23 @@ def _verify_document(doc: dict, expected: str, url: str) -> str:
     return text
 
 
+def same_statute_endpoint(first: str, second: str) -> bool:
+    """Country membership is not proof that two URLs represent one statute."""
+    if first == second:
+        return True
+    from urllib.parse import urlparse, parse_qs
+    a, b = urlparse(first), urlparse(second)
+    if a.hostname != b.hostname:
+        return False
+    if a.hostname == "eur-lex.europa.eu":
+        left = parse_qs(a.query).get("uri", [])
+        right = parse_qs(b.query).get("uri", [])
+        return bool(left and left == right and left[0].startswith("CELEX:"))
+    # Other representations need an explicit, separately verified migration;
+    # fall back to full current-law revalidation instead of guessing identity.
+    return False
+
+
 def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | None = None) -> dict:
     import knowledge_update as knowledge
     if url not in knowledge.SOURCES.get(source, ()):
@@ -352,7 +369,8 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         candidates = sorted((alternatives or {}).items(),
                             key=lambda item: ("/TXT/HTML/" not in item[0], "/TXT/XML/" in item[0]))
         for candidate_url, candidate_hash in candidates:
-            if candidate_url == url or candidate_url not in knowledge.SOURCES.get(source, ()):
+            if (candidate_url == url or candidate_url not in knowledge.SOURCES.get(source, ())
+                    or not same_statute_endpoint(url, candidate_url)):
                 continue
             try:
                 record("fetching_evidence", source=source, operation="检查同法规备用历史快照", endpoint=candidate_url, operation_limit_seconds=90)
@@ -394,7 +412,7 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         new_url, new_hash = "", ""
         candidates = [old_url] + list(knowledge.SOURCES.get(source, ()))
         for alternative in dict.fromkeys(candidates):
-            if alternative == url:
+            if alternative == url or not same_statute_endpoint(url, alternative):
                 continue
             try:
                 record("fetching_evidence", source=source, operation="尝试当前官方备用入口", endpoint=alternative, operation_limit_seconds=90)
