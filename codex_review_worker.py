@@ -658,10 +658,37 @@ def _repository_session():
 
 
 def _api(session, method, route, **kwargs):
-    response = session.request(method, API + route, timeout=(15, 90), **kwargs)
+    response = session.request(method, API + route, timeout=kwargs.pop("timeout", (15, 90)), **kwargs)
     if response.status_code not in (200, 201):
         raise ReviewError(f"自动发布接口失败（HTTP {response.status_code}）；稍后重试")
     return response.json()
+
+
+def cloud_observation(session, commit):
+    """Observe actual CI state; a submitted candidate is not a passed test."""
+    try:
+        runs = _api(session, "GET", "/actions/runs", params={"head_sha":commit,"per_page":1}, timeout=(5,15)).get("workflow_runs", [])
+        if not runs:
+            return {"cloud_state":"not_started", "cloud_step":"候选已提交，维护流程尚未开始"}
+        run = runs[0]
+        state = run.get("status", "unknown")
+        result = {"cloud_state":state,"cloud_conclusion":run.get("conclusion"), "cloud_run_id":run["id"]}
+        if state == "completed":
+            result["cloud_step"] = "维护流程已通过，等待签名包可用" if run.get("conclusion") == "success" else "维护流程未通过，候选不能安装"
+            return result
+        jobs = _api(session, "GET", f"/actions/runs/{run['id']}/jobs", timeout=(5,15)).get("jobs", [])
+        names = {"All-country daily coverage and hourly retries":"官方来源与全部国家覆盖检查",
+                 "Validate subscription-reviewed data proposals":"候选数据审核",
+                 "Regression tests (synthetic identity, no customer data)":"完整回归测试",
+                 "Build Windows application":"编译程序",
+                 "Compiled background survives launching process exit":"后台进程生命周期测试",
+                 "Sign release using encrypted repository secret":"数字签名",
+                 "Publish and preserve audit history":"发布并保存审计记录"}
+        running = next((step.get("name", "") for job in jobs for step in job.get("steps", []) if step.get("status") == "in_progress"), "")
+        result["cloud_step"] = names.get(running, running or "等待云端执行资源")
+        return result
+    except Exception as exc:
+        return {"cloud_state":"unavailable", "cloud_step":"暂时无法读取维护状态；仍在检查签名发布通道", "cloud_status_error":type(exc).__name__}
 
 
 def signed_repository_base(session) -> tuple[str, str, dict]:
@@ -760,10 +787,14 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             # Re-fetch just before publication; stale reviews cannot approve a newer body.
             import knowledge_update as knowledge
             reviewed_url = evidence.get("new_url", url)
+            record("reviewing", stage="verifying", source=source, source_errors=source_errors,
+                   operation="确认审查期间正文未再次变化", endpoint=reviewed_url, operation_limit_seconds=90)
             if knowledge._fingerprint(reviewed_url) != evidence["new_sha256"]:
                 raise ReviewError("官方正文在审查中再次变化；自动重新核查")
             # Cloud audit/build commits may advance HEAD during model review.
             # Rebase only when the signed legal base is exactly unchanged.
+            record("reviewing", stage="verifying", source=source, source_errors=source_errors,
+                   operation="确认签名规则基线未被新版本替换", operation_limit_seconds=240)
             fresh_head, fresh_tree, fresh_pack = signed_repository_base(session)
             if digest(fresh_pack) != digest(pack):
                 raise ReviewError("审查期间签名规则包已更新；自动重审，不覆盖新规则")
@@ -779,15 +810,21 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                 return state
             from rulepack_manager import configured_manifest_url, load_rulepack, update_from_manifest
             for poll_index in range(30):
+                observation = cloud_observation(session, commit)
+                if observation.get("cloud_state") == "completed" and observation.get("cloud_conclusion") != "success":
+                    raise ReviewError("云端完整测试或签名发布失败；保留候选并请求自动修复，未安装候选")
                 record("awaiting_cloud_tests", source=source, proposal_id=proposal_id, commit=commit,
                        source_errors=source_errors, cloud_poll=poll_index+1, cloud_poll_total=30,
-                       operation="检查云端测试和签名发布", operation_limit_seconds=120,
-                       message="候选已提交，正在检查云端测试与签名结果")
+                       operation=observation["cloud_step"], operation_limit_seconds=120, **observation,
+                       message="候选已提交："+observation["cloud_step"])
                 try:
                     update_from_manifest(configured_manifest_url())
                 except Exception:
                     # A CDN/network failure while waiting is not a legal or
                     # candidate failure; retain the candidate and retry.
+                    record("awaiting_cloud_tests", source=source, proposal_id=proposal_id, commit=commit,
+                           operation="发布通道暂不可达，60秒后再检查", operation_limit_seconds=75,
+                           message="签名包检查失败，等待下一次网络重试")
                     time.sleep(60)
                     continue
                 active = load_rulepack()
@@ -798,6 +835,9 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                     return record("installed" if not current.get("changed") else "more_reviews_pending",
                         source=source, proposal_id=proposal_id, commit=commit, rulepack_version=active["rulepack_version"],
                         source_errors=source_errors, remaining=current.get("changed", []), message="签名修复规则已安装并重新检查")
+                record("awaiting_cloud_tests", source=source, proposal_id=proposal_id, commit=commit,
+                       operation="尚未收到签名修复，60秒后再检查", operation_limit_seconds=75,
+                       message="尚无可安装的签名修复，等待下一次发布检查")
                 time.sleep(60)
             raise ReviewError("候选尚未通过完整测试或发布；已保留待办并自动重试")
         except Exception as exc:

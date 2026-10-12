@@ -61,7 +61,7 @@ def activity_caption(status, now=None):
     if heartbeat is not None and heartbeat > 30:
         parts.append("后台信号失联，可能已卡住")
     elif limit and elapsed is not None and elapsed > limit:
-        parts.append("超过本步骤时限，需处理；进程在线不代表有进展")
+        parts.append("超过等待阈值，可能卡住；进程在线不代表有进展")
     elif update.get("model_running"):
         parts.append("审查进程在线，等待输出")
     else:
@@ -125,7 +125,9 @@ def update_detail_text(status, events=(), requests=(), now=None):
     lines.extend(("", "当前聊天交接："+handoff_label(update)))
     for item in requests:
         if item.get("state") != "resolved":
-            lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；状态 {item.get('state')}")
+        states = {"pending":"等待本聊天接手" if item.get("queue_accepted") else "尚未成功发送",
+                  "processing":"当前聊天处理中", "resolved":"已复核解决"}
+        lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；{states.get(item.get('state'),'状态待确认')}")
     lines.extend(("", "最近实际步骤（北京时间）："))
     for event in list(events)[-20:]:
         try:

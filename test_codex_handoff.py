@@ -126,6 +126,16 @@ class TransparentProgressTests(unittest.TestCase):
 
 
 class ReviewActivityTests(unittest.TestCase):
+    def test_actual_cloud_step_is_observed_not_assumed(self):
+        with patch.object(worker,"_api",side_effect=[{"workflow_runs":[{"id":7,"status":"in_progress","conclusion":None}]},
+             {"jobs":[{"steps":[{"name":"Build Windows application","status":"in_progress"}]}]}]):
+            observed = worker.cloud_observation(Mock(),"a"*40)
+        self.assertEqual(observed["cloud_step"],"编译程序")
+        with patch.object(worker,"_api",return_value={"workflow_runs":[{"id":7,"status":"completed","conclusion":"failure"}]}):
+            observed = worker.cloud_observation(Mock(),"a"*40)
+        self.assertEqual(observed["cloud_conclusion"],"failure")
+        self.assertIn("不能安装",observed["cloud_step"])
+
     def test_model_wait_records_activity_without_resending_prompt(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ,LOCALAPPDATA=directory,OPENAI_API_KEY="never-export-this"):
             process = Mock(pid=123456,returncode=0)
