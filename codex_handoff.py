@@ -102,14 +102,27 @@ def submit(status):
             observations = {url: digest for url, digest in report.get("pending_source_fingerprints", {}).get(source, {}).items()
                             if isinstance(url, str) and url.startswith("https://") and isinstance(digest, str) and len(digest) == 64}
             key = hashlib.sha256(json.dumps([source, code, observations], sort_keys=True).encode()).hexdigest()[:24]
+            # A catalogue/comparison rejection can be described by either
+            # the reviewer or the body validator. That wording change is not
+            # new official evidence. Keep its existing owner/delivery state.
+            evidence_codes={'review_disagreement','unsuitable_official_document','obsolete_endpoint'}
+            if observations and code in evidence_codes:
+                same=[item for item in tickets.values() if item.get('source')==source
+                    and item.get('state')!='resolved' and item.get('category') in evidence_codes
+                    and item.get('observed_pending')==observations
+                    and item.get('official_sources')==list(SOURCES.get(source,()))]
+                if same:
+                    key=min(same,key=lambda item:item.get('first_seen',''))['id']
             ticket = tickets.get(key, {})
             # A closed finding can recur, but periodic repeats do not create new tickets.
             if ticket.get("state") == "resolved":
                 ticket = {}
+            categories=list(dict.fromkeys(ticket.get('observed_categories',[])+[ticket.get('category',code),code]))
             ticket.update(id=key, source=source, category=code, reason=REASONS[code],
                           first_seen=ticket.get("first_seen", now), last_seen=now,
                           state=ticket.get("state", "pending"), official_sources=list(SOURCES.get(source, ())),
-                          observed_pending=observations, target_thread_id=config["target_thread_id"])
+                          observed_pending=observations, observed_categories=categories,
+                          target_thread_id=config["target_thread_id"])
             tickets[key] = ticket
         queue.update(updated_at=now, target_thread_id=config["target_thread_id"])
         write_json(folder()/"codex_repair_requests.json", queue)

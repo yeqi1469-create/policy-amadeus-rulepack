@@ -23,6 +23,14 @@ MAX_EXE_BYTES = 150 * 1024 * 1024
 def _release_get(url: str, **kwargs):
     """Bounded retries for transport failures, never for signatures or hashes."""
     import requests
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+    parsed=urlsplit(url)
+    # Only the small mutable release manifest needs cache busting. Never
+    # alter signatures, immutable digests, or executable download addresses.
+    if parsed.path.endswith('/app_manifest.json'):
+        query=[(key,value) for key,value in parse_qsl(parsed.query,keep_blank_values=True) if key!='_policy_check']
+        query.append(('_policy_check',str(time.time_ns())))
+        url=urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(query),parsed.fragment))
     for attempt in range(3):
         try:
             response = requests.get(url, **kwargs)

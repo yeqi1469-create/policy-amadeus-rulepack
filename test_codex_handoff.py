@@ -39,6 +39,32 @@ class HandoffTests(unittest.TestCase):
         self.assertNotIn("secret-token", json.dumps(queue))
         self.assertEqual(bridge.summary()["state"], "queued")
 
+    def test_reworded_same_evidence_keeps_owner_and_does_not_redispatch(self):
+        failure={'state':'retry_pending','source_errors':{self.source:{'reason':'双轮审查未形成结论'}}}
+        bridge.submit(failure)
+        key=next(iter(bridge.read('codex_repair_requests.json')['requests']))
+        bridge.claim([key],self.owner)
+        bridge.await_evidence([key],self.owner,'等待完整官方正文')
+        bridge.submit({'state':'retry_pending','source_errors':{self.source:{'reason':'官方入口没有完整法条正文'}}})
+        tickets=bridge.read('codex_repair_requests.json')['requests']
+        self.assertEqual(len(tickets),1)
+        self.assertEqual(tickets[key]['owner_thread_id'],self.owner)
+        self.assertEqual(tickets[key]['state'],'awaiting_evidence')
+        self.assertEqual(tickets[key]['observed_categories'],['review_disagreement','unsuitable_official_document'])
+        with patch('subprocess.run') as send:
+            bridge.dispatch()
+        send.assert_not_called()
+
+    def test_new_official_hash_and_account_failure_are_not_suppressed(self):
+        failure={'state':'retry_pending','source_errors':{self.source:{'reason':'双轮审查未形成结论'}}}
+        bridge.submit(failure)
+        bridge.submit({'state':'retry_pending','source_errors':{self.source:{'reason':'现有订阅额度不可用'}}})
+        report=bridge.read('knowledge_coverage_latest.json')
+        report['pending_source_fingerprints'][self.source][self.url]='b'*64
+        write_json(bridge.folder()/'knowledge_coverage_latest.json',report)
+        bridge.submit(failure)
+        self.assertEqual(len(bridge.read('codex_repair_requests.json')['requests']),3)
+
     def test_global_fault_and_country_errors_both_retained(self):
         bridge.submit({**self.failure,"failure_source":"__worker__", "failure_type":"ReadTimeout"})
         requests = bridge.read("codex_repair_requests.json")["requests"]

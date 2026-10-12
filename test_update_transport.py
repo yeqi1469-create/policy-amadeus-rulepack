@@ -7,6 +7,15 @@ import codex_review_worker as worker
 
 
 class UpdateTransportTests(unittest.TestCase):
+    def test_manifest_check_bypasses_stale_cache_without_changing_binary_url(self):
+        from urllib.parse import urlsplit,parse_qs
+        with patch('requests.get',return_value=Mock(status_code=200)) as get,patch.object(app_updater.time,'time_ns',return_value=123):
+            app_updater._release_get('https://example.test/main/app_manifest.json?existing=value')
+            url=get.call_args.args[0]
+            self.assertEqual(urlsplit(url).path,'/main/app_manifest.json')
+            self.assertEqual(parse_qs(urlsplit(url).query),{'existing':['value'],'_policy_check':['123']})
+            app_updater._release_get('https://example.test/main/PolicyAmadeus.exe')
+            self.assertEqual(get.call_args.args[0],'https://example.test/main/PolicyAmadeus.exe')
     def test_repository_reads_retry_without_retrying_publication(self):
         response = Mock(status_code=200)
         response.json.return_value = {"ok": True}
