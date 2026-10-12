@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.10.12-1",
+  "rulepack_version": "2026.10.12-2",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
@@ -9,7 +9,7 @@
       "https://www.ris.bka.gv.at/eli/bgbl/i/2014/33/P0/NOR40162350": "d18c659f4b61dd69cae8b10876b9879f2c34aa481f41a2872d430ca727913b4d"
     },
     "Country — Finland": {
-      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0",
+      "https://www.finlex.fi/fi/lainsaadanto/1978/38": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
       "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0"
     },
     "Country — Luxembourg": {
@@ -260,6 +260,36 @@
       "second_review_reason": "The supplied full old/current texts differ only in cross-reference spacing in Articles 33(4), 38(1) and 51(2). No operative right, obligation, deadline, scope or commencement provision changes. The existing Portugal overlay reflects Article 12(1)'s three-year liability period. No applicable substantive change requires a patch, so metadata_only and empty patches are supported. Approval is limited to this snapshot comparison; it does not authenticate the hashes, establish consolidated currentness or certify blanket rulepack compliance.",
       "reviewed_at": "2026-10-12T02:15:03.667902+00:00",
       "method": "two_local_subscription_reviews_then_cloud_tests"
+    },
+    {
+      "id": "391b6ee28f0ee2eabbf281fa274df86c87d4acb1e0e8f3c5bf323240abd15d9c",
+      "source": "Country — Finland",
+      "url": "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038",
+      "sha256": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
+      "classification": "already_covered",
+      "reason": "The supplied full representations concern the same authoritative Finlex Consumer Protection Act 38/1978, whose goods-sale and distance-sale provisions apply to ordinary B2C ecommerce. The replacement endpoint is legally equivalent: it supplies the same consolidated statute and relevant full provisions, rather than guidance or a catalogue. All five reverse edits were reviewed. The first two remove commencement notices and former identity-verification wording for Law 835/2026, effective 1 October 2026; the applicable deferred-payment requirement is already recorded in Finland’s overlay and automatic activation. The third removes former mortgage-supervision wording, and the fourth removes former timeshare-signature wording; neither changes ordinary goods ecommerce policies. The fifth updates a directive publication citation without changing operative provisions or commencement dates. No additional rule patch is required by this detection; this does not approve either hash or certify blanket rulepack compliance.",
+      "quotes": [
+        "Tämän luvun säännökset koskevat tavaran kauppaa, jossa myyjänä on elinkeinonharjoittaja ja ostajana kuluttaja.",
+        "Jos kuluttaja ostaessaan hyödykkeitä verkossa valitsee maksutavan, joka merkitsee maksunlykkäystä, kyseistä maksutapaa tarjoavan elinkeinonharjoittajan on todennettava kuluttajan henkilöllisyys maksutavan hyväksymisen yhteydessä käyttämällä tunnistusmenetelmää, joka täyttää vahvasta sähköisestä tunnistamisesta annetun lain (617/2009) 8 §:ssä tarkoitetut sähköisen tunnistamisen järjestelmän vaatimukset tai maksupalvelulain (290/2010) 8 §:n 24 kohdassa ja 85 c §:n 4 momentissa tarkoitetut vahvan tunnistamisen vaatimukset.",
+        "Jos henkilöllisyys todennetaan sähköisesti, luotonantajan on käytettävä tunnistusmenetelmää, joka täyttää vahvasta sähköisestä tunnistamisesta annetun lain 8 §:ssä tarkoitetut vaatimukset tai maksupalvelulain 8 §:n 24 kohdassa ja 85 c §:n 4 momentissa tarkoitetut vahvan tunnistamisen vaatimukset.",
+        "Liikenne- ja viestintävirasto antaa pyynnöstä valvontaviranomaiselle 7 luvun 15 §:n noudattamista tämän luvun 31 §:n nojalla valvottaessa lausunnon siitä, täyttääkö luotonantajan käyttämä sähköinen henkilöllisyyden tunnistamismenetelmä vahvasta sähköisestä tunnistamisesta annetun lain 8 §:ssä säädetyt vaatimukset.",
+        "Sopimuksen sähköiseen allekirjoittamiseen sovelletaan sähköisestä tunnistamisesta ja sähköisiin transaktioihin liittyvistä luottamuspalveluista sisämarkkinoilla ja direktiivin 1999/93/EY kumoamisesta annettua Euroopan parlamentin ja neuvoston asetusta (EU) N:o 910/2014, sellaisena kuin se on viimeksi muutettuna asetuksella (EU) 2024/1183.",
+        "Komission delegoitu direktiivi (EU) 2026/74; EUVL L, 20.4.2026",
+        "4.9.2026/835: Tämä laki tulee voimaan 1 päivänä lokakuuta 2026."
+      ],
+      "second_review_reason": "The supplied lossless reconstruction supports already_covered and empty patches. All five edits are accounted for: the first two remove expired commencement notices and former identity-verification wording, with the applicable deferred-payment requirement already recorded and activated in the rulepack; the third concerns mortgage supervision; the fourth concerns timeshare signatures; and the fifth adds a directive publication citation without amending operative provisions. Examination against the complete body reveals no additional in-scope right or obligation changed by these edits. Law 835/2026 is effective on the review date; the separate November 2026 credit amendments must remain prospective. Approval covers this snapshot comparison and decision, not hash authenticity or blanket rulepack compliance.",
+      "reviewed_at": "2026-10-12T07:15:05.470739+00:00",
+      "method": "two_local_subscription_reviews_then_cloud_tests"
     }
-  ]
+  ],
+  "reviewed_source_replacements": {
+    "Country — Finland": {
+      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": {
+        "url": "https://www.finlex.fi/fi/lainsaadanto/1978/38",
+        "sha256": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
+        "reason": "The supplied full representations concern the same authoritative Finlex Consumer Protection Act 38/1978, whose goods-sale and distance-sale provisions apply to ordinary B2C ecommerce. The replacement endpoint is legally equivalent: it supplies the same consolidated statute and relevant full provisions, rather than guidance or a catalogue. All five reverse edits were reviewed. The first two remove commencement notices and former identity-verification wording for Law 835/2026, effective 1 October 2026; the applicable deferred-payment requirement is already recorded in Finland’s overlay and automatic activation. The third removes former mortgage-supervision wording, and the fourth removes former timeshare-signature wording; neither changes ordinary goods ecommerce policies. The fifth updates a directive publication citation without changing operative provisions or commencement dates. No additional rule patch is required by this detection; this does not approve either hash or certify blanket rulepack compliance.",
+        "proposal_id": "391b6ee28f0ee2eabbf281fa274df86c87d4acb1e0e8f3c5bf323240abd15d9c"
+      }
+    }
+  }
 }
