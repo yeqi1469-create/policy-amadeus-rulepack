@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.10.12-2",
+  "rulepack_version": "2026.10.12-3",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
@@ -10,7 +10,7 @@
     },
     "Country — Finland": {
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
-      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "dd474cd81685eba078710e1a1b5556df4a88b3ee30494b31f03a23716b9e2cd0"
+      "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa"
     },
     "Country — Luxembourg": {
       "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "9e416439b5227c9ce99171cb5109765fb3c035d4ad8a5ea7e9ec7b19d1f7f053"
@@ -279,6 +279,23 @@
       ],
       "second_review_reason": "The supplied lossless reconstruction supports already_covered and empty patches. All five edits are accounted for: the first two remove expired commencement notices and former identity-verification wording, with the applicable deferred-payment requirement already recorded and activated in the rulepack; the third concerns mortgage supervision; the fourth concerns timeshare signatures; and the fifth adds a directive publication citation without amending operative provisions. Examination against the complete body reveals no additional in-scope right or obligation changed by these edits. Law 835/2026 is effective on the review date; the separate November 2026 credit amendments must remain prospective. Approval covers this snapshot comparison and decision, not hash authenticity or blanket rulepack compliance.",
       "reviewed_at": "2026-10-12T07:15:05.470739+00:00",
+      "method": "two_local_subscription_reviews_then_cloud_tests"
+    },
+    {
+      "id": "9e18291ace35f44d0791115a6ac011272cf4765ea2a3d8cf1849522aa04af124",
+      "source": "Country — Finland",
+      "url": "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038",
+      "sha256": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
+      "classification": "already_covered",
+      "reason": "The supplied Finlex Consumer Protection Act 38/1978 is operative consumer law applicable to goods sales and ecommerce. All five reverse edits were reviewed against the complete current document and rulepack. The first two remove expired commencement notices and former identity-verification wording for Law 835/2026; the relevant deferred-payment requirement and its 1 October activation are already recorded. The third removes former mortgage-supervision wording, and the fourth removes former timeshare-signature wording; neither changes ordinary physical-goods ecommerce rights. The fifth changes a directive publication citation, without changing operative provisions or commencement dates. No additional applicable change requires patches. All supplied source URLs are identical, so no endpoint replacement is proposed. This conclusion does not approve hashes or certify blanket rulepack compliance.",
+      "quotes": [
+        "Tämän luvun säännökset koskevat tavaran kauppaa, jossa myyjänä on elinkeinonharjoittaja ja ostajana kuluttaja.",
+        "Jos kuluttaja ostaessaan hyödykkeitä verkossa valitsee maksutavan, joka merkitsee maksunlykkäystä, kyseistä maksutapaa tarjoavan elinkeinonharjoittajan on todennettava kuluttajan henkilöllisyys maksutavan hyväksymisen yhteydessä käyttämällä tunnistusmenetelmää, joka täyttää vahvasta sähköisestä tunnistamisesta annetun lain (617/2009) 8 §:ssä tarkoitetut sähköisen tunnistamisen järjestelmän vaatimukset tai maksupalvelulain (290/2010) 8 §:n 24 kohdassa ja 85 c §:n 4 momentissa tarkoitetut vahvan tunnistamisen vaatimukset.",
+        "Komission delegoitu direktiivi (EU) 2026/74; EUVL L, 20.4.2026",
+        "4.9.2026/835: Tämä laki tulee voimaan 1 päivänä lokakuuta 2026."
+      ],
+      "second_review_reason": "The supplied lossless old/current comparison supports already_covered and empty patches. All five edits are accounted for against the complete body: edits 1–2 remove expired commencement notices and former identity-verification wording without adding a verification standard; the applicable conditional deferred-payment requirement is already recorded and activated. Edit 3 concerns mortgage supervision. Edit 4 concerns timeshare signatures and associated credit references, outside ordinary physical-goods ecommerce. Edit 5 adds a directive publication citation without changing operative provisions. No additional in-scope mandatory right or obligation changes through these edits. Law 835/2026 is effective on the review date; the separate November credit amendments remain prospective. Identical supplied URLs support no endpoint replacement. Approval concerns this comparison and decision, not hash authenticity or blanket rulepack compliance.",
+      "reviewed_at": "2026-10-12T11:21:21.007529+00:00",
       "method": "two_local_subscription_reviews_then_cloud_tests"
     }
   ],
