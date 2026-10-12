@@ -21,7 +21,7 @@
       "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1": "109159d7e7b84198efe600ff16ecedbe2ac6bdfe02aec029d49e4210c7f4ef7a"
     }
   },
-  "checked_at": "2026-10-12T12:12:57.332606+00:00",
+  "checked_at": "2026-10-12T12:25:24.255528+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -36,7 +36,6 @@
     "Country — Romania",
     "Turkey distance contracts",
     "Country — Iceland",
-    "Country — Ukraine",
     "Germany BGB"
   ],
   "countries": {
@@ -206,7 +205,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332407+00:00"
+      "checked_at": "2026-10-12T12:25:24.255336+00:00"
     },
     "Czechia": {
       "status": "source_fingerprint_no_change",
@@ -245,11 +244,13 @@
       "checked_at": "2026-10-12T01:25:03.647950+00:00"
     },
     "Ukraine": {
-      "status": "temporarily_unreachable",
-      "official_sources_reached": [],
+      "status": "source_changed",
+      "official_sources_reached": [
+        "https://zakon.rada.gov.ua/laws/show/1023-12/print"
+      ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332437+00:00"
+      "checked_at": "2026-10-12T12:25:24.255366+00:00"
     },
     "Slovakia": {
       "status": "source_fingerprint_no_change",
@@ -287,7 +288,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332464+00:00"
+      "checked_at": "2026-10-12T12:25:24.255390+00:00"
     },
     "Lithuania": {
       "status": "source_changed",
@@ -296,7 +297,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332470+00:00"
+      "checked_at": "2026-10-12T12:25:24.255396+00:00"
     },
     "Slovenia": {
       "status": "source_fingerprint_no_change",
@@ -310,11 +311,14 @@
     "Latvia": {
       "status": "source_changed",
       "official_sources_reached": [
-        "https://likumi.lv/ta/id/23309"
+        "https://likumi.lv/ta/id/23309",
+        "https://likumi.lv/ta/id/266462",
+        "https://likumi.lv/ta/id/300099",
+        "https://likumi.lv/ta/id/96619"
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332482+00:00"
+      "checked_at": "2026-10-12T12:25:24.255408+00:00"
     },
     "Estonia": {
       "status": "source_fingerprint_no_change",
@@ -342,7 +346,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332499+00:00"
+      "checked_at": "2026-10-12T12:25:24.255426+00:00"
     },
     "Bosnia and Herzegovina": {
       "status": "source_fingerprint_no_change",
@@ -431,7 +435,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T12:12:57.332552+00:00"
+      "checked_at": "2026-10-12T12:25:24.255477+00:00"
     },
     "Luxembourg": {
       "status": "source_fingerprint_no_change",
@@ -513,19 +517,19 @@
     "state": "cloud_source_run"
   },
   "mode": "incremental",
-  "last_full_checked_at": "2026-10-12T12:12:57.332612+00:00",
+  "last_full_checked_at": "2026-10-12T12:25:24.255534+00:00",
   "observed_source_fingerprints": {
+    "UK distance selling": {
+      "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
+    },
     "EU GDPR obligations": {
       "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
-    },
-    "EU Sale of Goods Directive": {
-      "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
     "EU Consumer Rights Directive": {
       "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
-    "UK distance selling": {
-      "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
+    "EU Sale of Goods Directive": {
+      "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
     "Swiss ecommerce obligations": {
       "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
@@ -536,7 +540,13 @@
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr": "9a82b12f14eb0553c84eed5d1a1c9036857dd62788e0cf9360af25f27f1cc1ed"
     },
     "Country — Latvia": {
+      "https://likumi.lv/ta/id/300099": "1b028487449cb73a87a7dbddccd13fc3686c472153c8c36707f4e77e092d7125",
+      "https://likumi.lv/ta/id/96619": "13348ff5cc478275b1ad6fced90f4e41e2838da084bc9e3406a7b9702b6cb0cb",
+      "https://likumi.lv/ta/id/266462": "a0030d6532fa24c3ea056b8c10bc3722f0612c678498834166bc731fe93bf5a8",
       "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
+    },
+    "Country — Ukraine": {
+      "https://zakon.rada.gov.ua/laws/show/1023-12/print": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201"
     },
     "Country — Montenegro": {
       "https://www.sluzbenilist.me/propisi/390427": "6bdaea5ee26a0d9a1cfc4dda1578160b59f9fec2e115c6ff49b572de8502dd38",
