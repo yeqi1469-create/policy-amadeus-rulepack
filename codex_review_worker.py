@@ -42,6 +42,32 @@ class EvidenceTooLarge(ReviewError):
     pass
 
 
+class UnsuitableOfficialDocument(ReviewError):
+    """A government host is not proof that a page is applicable law text."""
+    pass
+
+
+def model_failure_summary(stdout: str, stderr: str, returncode: int) -> dict:
+    """Allowlisted diagnosis only; never persist raw errors or credentials."""
+    errors = [stderr]
+    for line in stdout.splitlines():
+        try:
+            event=json.loads(line)
+        except ValueError:
+            continue
+        if event.get("type") in {"error","turn.failed"} or event.get("item",{}).get("type")=="error":
+            errors.append(json.dumps(event,ensure_ascii=False))
+    content = "\n".join(errors).lower()
+    codes = {
+        "input_capacity": ("context_length_exceeded", "context window", "maximum context length", "input is too long"),
+        "subscription_quota": ("usage_limit_reached", "usage_limit_exceeded", "you've hit your usage limit"),
+        "authentication": ("authentication_error", "invalid_api_key", "401 unauthorized", "not logged in"),
+        "transport": ("connection reset", "connection timed out", "stream disconnected", "failed to connect"),
+    }
+    kind = next((kind for kind,patterns in codes.items() if any(pattern in content for pattern in patterns)), "unclassified")
+    return {"category":kind,"exit_code":returncode,"raw_output_retained":False}
+
+
 def failure_details(exc: Exception) -> dict:
     """Diagnostics without exception payloads, credentials or source text."""
     result = {"failure_type": type(exc).__name__}
@@ -275,8 +301,17 @@ def _verify_document(doc: dict, expected: str, url: str) -> str:
     if hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest() != expected:
         raise ReviewError("官方正文证据与指纹不匹配")
     from urllib.parse import urlparse
-    if urlparse(url).hostname == "zakon.rada.gov.ua" and not re.search(r"(?:Стаття|Article)\s+\d", text, re.I):
-        raise ReviewError("乌克兰历史记录只有页面信息、没有法条正文；需要重新核验，不能据此批准法律变化")
+    parsed = urlparse(url)
+    if parsed.hostname == "zakon.rada.gov.ua":
+        if re.search(r"/comp\d+",parsed.path):
+            raise UnsuitableOfficialDocument("历史比较入口不是现行完整法律正文；需要明确迁移和完整复核，不能自动批准")
+        if not re.search(r"(?:Стаття|Article)\s+\d", text, re.I):
+            raise UnsuitableOfficialDocument("乌克兰历史记录只有页面信息、没有法条正文；需要重新核验，不能据此批准法律变化")
+    if parsed.hostname in {"www.sluzbenilist.me","sluzbenilist.me"} and parsed.path=="/propisi/390427":
+        if len(set(re.findall(r"(?:Član|Clan|Члан)\s+(\d+)",text,re.I))) < 10:
+            raise UnsuitableOfficialDocument("黑山官方入口仅提供法规目录信息，没有完整法条正文；不能将目录变化自动批准为法律无变化")
+    if parsed.hostname == "wapi.gov.me" and "49d8cec5-9723-461b-9297-d3a6a5c2c7a8" in parsed.path:
+        raise UnsuitableOfficialDocument("黑山备用文件是部门年度工作报告，不是消费者保护法正文；不能用报告代替法条复核")
     # Storage/integrity capacity is distinct from the model's input budget.
     # A complete document must not be rejected merely because old and new
     # bodies would repeat mostly identical text in a review prompt.
@@ -289,6 +324,8 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
     import knowledge_update as knowledge
     if url not in knowledge.SOURCES.get(source, ()):
         raise ReviewError("不是已配置的官方法律入口")
+    if source == "Country — Ukraine" and re.search(r"/comp\d+",url):
+        raise UnsuitableOfficialDocument("历史比较入口不是现行完整法律正文；需要明确迁移和完整复核，不能自动批准")
     old_url = url
     try:
         record("fetching_evidence", source=source, operation="恢复旧正文快照", endpoint=url, operation_limit_seconds=90)
@@ -300,6 +337,7 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         # recovered exact old portal page. The model must verify equivalence.
         before = ""
         oversized = original_error if isinstance(original_error, EvidenceTooLarge) else None
+        unsuitable = original_error if isinstance(original_error, UnsuitableOfficialDocument) else None
         candidates = sorted((alternatives or {}).items(),
                             key=lambda item: ("/TXT/HTML/" not in item[0], "/TXT/XML/" in item[0]))
         for candidate_url, candidate_hash in candidates:
@@ -317,11 +355,16 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
             except EvidenceTooLarge as exc:
                 oversized = exc
                 continue
+            except UnsuitableOfficialDocument as exc:
+                unsuitable = exc
+                continue
             except Exception:
                 continue
         if not before:
             if oversized is not None:
                 raise oversized
+            if unsuitable is not None:
+                raise unsuitable
             raise ReviewError("新旧官方正文或同一法规备用存档不可用；保留待办并重试") from None
     evidence_dir = folder() / "codex_review" / "evidence"
     previous = os.environ.get("POLICY_AMADEUS_EVIDENCE_DIR")
@@ -449,7 +492,17 @@ def codex_json(prompt: str, schema: dict, label: str) -> dict:
             write_json(workspace/(label+"_event_types.json"), {"rejected_item_type": item["type"], "item_types": item_types})
             raise ReviewError("审查模型尝试使用工具；未采纳输出")
     if result.returncode or not output.exists():
-        raise ReviewError("Codex 调用失败或额度不可用；待办保留，稍后重试")
+        diagnosis = model_failure_summary(result.stdout,result.stderr,result.returncode)
+        diagnosis.update(label=label,checked_at=datetime.now(timezone.utc).isoformat(),output_present=output.exists())
+        write_json(workspace/(label+"_failure.json"),diagnosis)
+        messages = {
+            "input_capacity":"官方正文审查输入超出模型容量；未截断或批准，需要无损分段审查",
+            "subscription_quota":"现有订阅额度暂不可用；未调用付费 API，待办保留",
+            "authentication":"现有订阅登录不可用；未调用付费 API，待办保留",
+            "transport":"审查连接暂时失败；未批准候选，稍后重试",
+            "unclassified":"审查进程失败，具体原因尚未确认；未批准候选，诊断已记录",
+        }
+        raise ReviewError(messages[diagnosis["category"]])
     try:
         return json.loads(output.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -561,6 +614,15 @@ def review(evidence: dict, pack: dict) -> tuple[dict, dict]:
         "Approval requires exact current-document quotes and every applicable change safely covered. "
         "Return approved, reason and exact current-document quotes as JSON.\n" +
         json.dumps({**context, "proposed_decision": decision}, ensure_ascii=False), schema, "verification")
+    audit_id = digest({"source":evidence["source"],"url":evidence["url"],"new":evidence["new_sha256"],"base":digest(pack)})
+    write_json(folder()/"codex_review/reviews"/(audit_id+".json"),{
+        "source":evidence["source"],"url":evidence["url"],"old_sha256":evidence["old_sha256"],
+        "old_url":evidence.get("old_url",evidence["url"]),"new_url":evidence.get("new_url",evidence["url"]),
+        "new_sha256":evidence["new_sha256"],"base_rulepack_sha256":digest(pack),
+        "review_input_sha256":digest(review_evidence),
+        "review_input_representation":review_evidence.get("representation","full_old_and_new"),
+        "reviewed_at":datetime.now(timezone.utc).isoformat(),"decision":decision,"verification":verifier,
+        "proposal_validated":False})
     return decision, verifier
 
 

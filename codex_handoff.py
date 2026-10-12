@@ -57,16 +57,21 @@ def ticket_lock():
 
 def category(reason):
     for phrase, code in (("超出单次自动审查", "large_document"),
+                         ("超出模型容量", "large_document"),
+                         ("不是现行完整法律正文", "unsuitable_official_document"),
+                         ("没有完整法条正文", "unsuitable_official_document"),
+                         ("部门年度工作报告", "unsuitable_official_document"),
                          ("不是已配置", "obsolete_endpoint"), ("不是该法规", "obsolete_endpoint"),
                          ("新旧官方", "missing_historical_evidence"), ("双轮", "review_disagreement"),
                          ("当前官方", "current_source_unavailable"), ("ModuleNotFound", "runtime_dependency"),
-                         ("额度", "account_or_quota"), ("签名", "publication_or_signature")):
+                         ("额度", "account_or_quota"), ("订阅登录不可用", "account_or_quota"), ("签名", "publication_or_signature")):
         if phrase in str(reason):
             return code
     return "runtime_or_transport"
 
 
 REASONS = {"obsolete_endpoint": "待审旧入口与当前官方来源配置不匹配",
+           "unsuitable_official_document":"官方入口是历史比较页、法规目录或工作报告；需恢复现行完整法律正文",
            "large_document": "官方正文已取得，但超出单次自动审查容量；需要分段核验",
            "missing_historical_evidence": "缺少可靠的旧正文或同法规历史快照",
            "review_disagreement": "双轮审查未形成可批准结论",

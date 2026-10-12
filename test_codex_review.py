@@ -30,6 +30,61 @@ class CodexReviewTests(unittest.TestCase):
         self.assertTrue(detail["failure_frames"])
         self.assertNotIn("sensitive-token-must-not-appear", json.dumps(detail))
 
+    def test_generic_call_failure_is_not_invented_quota_exhaustion(self):
+        diagnosis=worker.model_failure_summary('', 'unknown failure secret-token', 1)
+        self.assertEqual(diagnosis['category'],'unclassified')
+        self.assertNotIn('secret-token',json.dumps(diagnosis))
+
+    def test_model_failure_classifies_only_observed_errors(self):
+        for message,expected in [('context_length_exceeded','input_capacity'),
+                                 ("You've hit your usage limit",'subscription_quota'),
+                                 ('401 Unauthorized','authentication'),('stream disconnected','transport')]:
+            result=worker.model_failure_summary(json.dumps({'type':'error','message':message}), '',1)
+            self.assertEqual(result['category'],expected)
+        quoted=json.dumps({'type':'item.completed','item':{'type':'agent_message','text':'usage_limit_reached'}})
+        self.assertEqual(worker.model_failure_summary(quoted,'',1)['category'],'unclassified')
+
+    def test_montenegro_catalogue_and_work_report_not_accepted_as_statute(self):
+        urls=['https://www.sluzbenilist.me/propisi/390427',
+              'https://wapi.gov.me/download/49d8cec5-9723-461b-9297-d3a6a5c2c7a8?version=1.0']
+        for url in urls:
+            text='Government registry and annual report information. '*80
+            digest=hashlib.sha256(text.encode()).hexdigest()
+            with self.subTest(url=url),self.assertRaises(worker.UnsuitableOfficialDocument):
+                worker._verify_document({'url':url,'normalized_text':text},digest,url)
+
+    def test_historical_comparison_rejected_even_when_contains_articles(self):
+        url='https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119'
+        body='Article 1. Historical consumer law. '*80
+        digest=hashlib.sha256(body.encode()).hexdigest()
+        with self.assertRaises(worker.UnsuitableOfficialDocument):
+            worker._verify_document({'url':url,'normalized_text':body},digest,url)
+        with patch.object(worker,'prior_document') as old,patch('knowledge_update._fingerprint') as new:
+            with self.assertRaises(worker.UnsuitableOfficialDocument):
+                worker.prepare_evidence('Country — Ukraine',url,digest)
+            old.assert_not_called()
+            new.assert_not_called()
+
+    def test_review_rejection_audit_kept_without_approving(self):
+        rejected={'approved':False,'reason':'Mandatory rights require further verification','quotes':self.verifier['quotes']}
+        with patch.object(worker,'codex_json',side_effect=[self.decision,rejected]):
+            worker.review(self.evidence,self.pack)
+        audit_id=worker.digest({'source':self.source,'url':self.url,'new':self.evidence['new_sha256'],'base':worker.digest(self.pack)})
+        audit=json.loads((worker.folder()/'codex_review/reviews'/(audit_id+'.json')).read_text(encoding='utf-8'))
+        self.assertFalse(audit['verification']['approved'])
+        self.assertFalse(audit['proposal_validated'])
+
+    def test_failed_call_persists_safe_reason_and_preserves_rejection(self):
+        auth=Mock(returncode=0,stdout='Logged in using ChatGPT',stderr='')
+        process=Mock(pid=1,returncode=1)
+        process.communicate.return_value=(json.dumps({'type':'error','message':'context_length_exceeded secret-token'}),'')
+        with patch.object(worker,'locate_codex',return_value=Path('synthetic.exe')),patch('subprocess.run',return_value=auth),patch('subprocess.Popen',return_value=process):
+            with self.assertRaisesRegex(worker.ReviewError,'超出模型容量'):
+                worker.codex_json('public law fixture',{},'proposal')
+        data=json.loads((worker.folder()/'codex_review/model_workspace/proposal_failure.json').read_text(encoding='utf-8'))
+        self.assertEqual(data['category'],'input_capacity')
+        self.assertNotIn('secret-token',json.dumps(data))
+
     def test_failure_retains_pending_and_records_missing_module(self):
         self.enable()
         report = {"changed": [self.source], "pending_source_fingerprints": {self.source: {self.url: "b"*64}}}

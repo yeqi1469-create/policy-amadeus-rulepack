@@ -135,6 +135,12 @@ class HandoffTests(unittest.TestCase):
         path.write_text(json.dumps({"state":"installed"}),encoding="utf-8-sig")
         self.assertEqual(bridge.read("app_install_status.json")["state"],"installed")
 
+    def test_unsuitable_official_body_is_not_queued_as_quota_failure(self):
+        self.assertEqual(bridge.category('黑山备用文件是部门年度工作报告，不是法条'),'unsuitable_official_document')
+        self.assertEqual(bridge.category('历史比较入口不是现行完整法律正文'),'unsuitable_official_document')
+        self.assertEqual(bridge.category('审查进程失败，具体原因尚未确认'),'runtime_or_transport')
+        self.assertEqual(bridge.category('现有订阅登录不可用'),'account_or_quota')
+
     def test_verified_large_snapshot_not_misreported_as_missing(self):
         body = "Applicable official consumer-law body. " * 60000
         digest = hashlib.sha256(body.encode()).hexdigest()

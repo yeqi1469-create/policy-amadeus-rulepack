@@ -186,8 +186,8 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
     "Ukraine": (
         "https://zakon.rada.gov.ua/laws/show/1023-12",
         "https://zakon.rada.gov.ua/laws/show/1023-12/print",
-        # Historical comparison pages remain diagnostic alternatives, not
-        # automatically equivalent current statutes; reject shells explicitly.
+        # Retained for diagnostic history only. The review worker explicitly
+        # refuses to approve this historical comparison as a current statute.
         "https://zakon.rada.gov.ua/laws/show/en/1023-12/comp20121119",
         "https://zakon.rada.gov.ua/go/1023-12",
     ),
@@ -291,9 +291,9 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
     # lets the checker recover automatically without replacing it by a mirror.
     "Montenegro": (
         "https://www.sluzbenilist.me/propisi/390427",
-        # Official Government consumer-protection directorate summary of the
-        # enacted 2026 Act, used while the Gazette/PIS record intermittently
-        # returns HTTP 500.
+        # Historical diagnostic endpoint: this is the ministry's annual work
+        # report, NOT statute text. Retain its provenance, never use it as a
+        # legal-body replacement; the review worker explicitly rejects it.
         "https://wapi.gov.me/download/49d8cec5-9723-461b-9297-d3a6a5c2c7a8?version=1.0",
     ),
     "Luxembourg": (
