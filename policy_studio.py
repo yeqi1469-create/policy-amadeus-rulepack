@@ -12,7 +12,7 @@ from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 from knowledge_update import get_status, start_startup_check
-from update_progress import progress_caption
+from update_progress import progress_caption, activity_caption, update_detail_text
 from policy_generator import extract_license_data, generate_translated_bundle
 
 
@@ -178,6 +178,7 @@ class PolicyStudio(tk.Tk):
         self.knowledge_status.set(str(status.get("message", "正在检查政策知识库更新……")))
         self.progress_status = status
         self._update_progress()
+        self._refresh_update_details()
         self.after(300 if status.get("state") == "checking" else 1000 if status.get("update_status") else 5000, self._poll_knowledge_check)
 
     def _apply_windows_icons(self) -> None:
@@ -202,10 +203,17 @@ class PolicyStudio(tk.Tk):
         tk.Label(header, text=APP_TITLE, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 20, "bold")).pack(anchor="w")
         tk.Label(header, text="三步完成店铺基础资料设置", bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 10)).pack(anchor="w", pady=(5, 0))
         tk.Label(header, textvariable=self.knowledge_status, bg=PANEL, fg=ORANGE,
-                 font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
+                 wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
         self.progress_text = tk.StringVar(value="0% · 预计剩余：正在估算")
-        tk.Label(self.card, textvariable=self.progress_text, bg=PANEL, fg=ORANGE,
-                 font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=30, pady=(2, 3))
+        progress_row = tk.Frame(self.card, bg=PANEL)
+        progress_row.pack(fill="x", padx=30, pady=(2, 3))
+        tk.Button(progress_row, text="更新详情", command=self._show_update_details, bg="#343b47", fg=WHITE,
+                  relief="flat", font=("Microsoft YaHei UI", 9), padx=8, pady=2).pack(side="right", anchor="n")
+        tk.Label(progress_row, textvariable=self.progress_text, bg=PANEL, fg=ORANGE,
+                 wraplength=450, justify="left", font=("Microsoft YaHei UI", 9)).pack(side="left", fill="x", expand=True)
+        self.activity_text = tk.StringVar(value="正在建立检查任务")
+        tk.Label(self.card, textvariable=self.activity_text, bg=PANEL, fg=MUTED,
+                 wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", padx=30, pady=(0,3))
         self.progress = tk.Canvas(self.card, height=8, bg="#303640", highlightthickness=0)
         self.progress.pack(fill="x", padx=30)
         self.progress_fill = self.progress.create_rectangle(0, 0, 0, 8, fill=ORANGE, outline="")
@@ -270,9 +278,54 @@ class PolicyStudio(tk.Tk):
 
     def _update_progress(self) -> None:
         status = getattr(self, "progress_status", {"state": "checking", "progress_percent": 0})
+        status = dict(status)
+        if status.get("update_status"):
+            status["update_status"] = dict(status["update_status"])
+            source = str(status["update_status"].get("source") or "").removeprefix("Country — ")
+            status["update_status"]["source_label"] = MARKET_NAMES_CN.get(source, source)
         ratio = max(0, min(100, int(status.get("progress_percent", 100 if status.get("checked_at") else 0)))) / 100
         self.progress_text.set(progress_caption(status))
+        self.activity_text.set(activity_caption(status))
         self.progress.coords(self.progress_fill, 0, 0, self.progress.winfo_width() * ratio, 8)
+
+    def _show_update_details(self):
+        existing = getattr(self, "_update_details_window", None)
+        if existing is not None and existing.winfo_exists():
+            existing.lift()
+            return
+        from tkinter.scrolledtext import ScrolledText
+        window = tk.Toplevel(self)
+        window.title("Policy Amadeus · 更新详情")
+        window.geometry("820x540")
+        window.minsize(620, 380)
+        window.configure(bg=PANEL)
+        tk.Label(window, text="实际步骤、等待原因与当前聊天交接", bg=PANEL, fg=WHITE,
+                 font=("Microsoft YaHei UI", 13, "bold")).pack(anchor="w", padx=18, pady=(14,8))
+        text = ScrolledText(window, wrap="word", bg="#111823", fg=WHITE, relief="flat",
+                            font=("Microsoft YaHei UI", 10), padx=12, pady=10)
+        text.pack(fill="both", expand=True, padx=18, pady=(0,14))
+        self._update_details_window, self._update_details_text = window, text
+        self._last_update_detail = None
+        self._refresh_update_details()
+
+    def _refresh_update_details(self):
+        window = getattr(self, "_update_details_window", None)
+        if window is None or not window.winfo_exists():
+            return
+        from codex_handoff import read
+        events = read("codex_review_events.json", [])
+        requests = read("codex_repair_requests.json").get("requests", {}).values()
+        value = update_detail_text(getattr(self, "progress_status", {}), events, requests)
+        text = self._update_details_text
+        if getattr(self, "_last_update_detail", None) == value:
+            return
+        position = text.yview()[0]
+        text.configure(state="normal")
+        text.delete("1.0", "end")
+        text.insert("1.0", value)
+        text.configure(state="disabled")
+        text.yview_moveto(position)
+        self._last_update_detail = value
 
     def show_step(self, step: int) -> None:
         self.step = step

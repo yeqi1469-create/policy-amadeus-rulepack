@@ -29,6 +29,13 @@ def main() -> None:
             result["codex_found"] = locate_codex().is_file()
             _, _, pack = signed_repository_base(_repository_session())
             result.update(publisher_auth_and_signature=True, rulepack_version=pack["rulepack_version"])
+            import subprocess
+            import codex_handoff
+            probe = subprocess.run([str(locate_codex()), "queue", "--help"], capture_output=True,
+                text=True, encoding="utf-8", errors="replace", timeout=15,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            result["event_queue_supported"] = probe.returncode == 0 and "--thread" in probe.stdout
+            result["event_handoff_configured"] = codex_handoff.settings().get("dispatch_mode") == "codex_queue"
         except Exception as exc:
             result.update(failure_details(exc))
         write_json(folder()/"codex_review_health.json", result)

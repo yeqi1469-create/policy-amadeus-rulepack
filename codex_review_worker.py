@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+import threading
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -29,6 +30,7 @@ API = "https://api.github.com/repos/" + REPO
 POLICIES = {"Refund and Return Policy", "Privacy Policy", "Terms of Service", "Shipping Policy",
             "Contact Information", "Legal Notice / Imprint"}
 CLASSES = {"metadata_only", "already_covered", "effective_change", "future_change", "insufficient_evidence"}
+_STATUS_LOCK = threading.RLock()
 
 
 class ReviewError(RuntimeError):
@@ -130,6 +132,23 @@ def worker_lock():
 
 
 def record(state: str, **fields) -> dict:
+    with _STATUS_LOCK:
+        value = _record(state, **fields)
+        try:
+            import codex_handoff as handoff
+            value["handoff"] = handoff.submit(value)
+            handoff.reconcile(value)
+            if state in ("retry_pending", "more_reviews_pending"):
+                value["handoff"] = handoff.dispatch()
+            else:
+                value["handoff"] = handoff.summary()
+        except Exception as exc:
+            value["handoff"] = {"state": "write_failed", "failure_type": type(exc).__name__}
+        write_json(folder()/"codex_review_status.json", value)
+        return value
+
+
+def _record(state: str, **fields) -> dict:
     previous = {}
     try:
         previous = json.loads((folder()/"codex_review_status.json").read_text(encoding="utf-8"))
@@ -139,6 +158,17 @@ def record(state: str, **fields) -> dict:
               "publishing": 65, "awaiting_cloud_tests": 75, "installing": 90,
               "rechecking": 95, "installed": 100, "current": 100}
     stage = fields.pop("stage", state)
+    for key in ("source", "source_index", "source_total"):
+        fields.setdefault(key, previous.get(key))
+    now = datetime.now(timezone.utc).isoformat()
+    operation = fields.get("operation", fields.get("message", state))
+    same_operation = (previous.get("operation") == operation and previous.get("stage") == stage
+                      and previous.get("source") == fields.get("source")
+                      and previous.get("endpoint") == fields.get("endpoint"))
+    fields.setdefault("operation", operation)
+    fields.setdefault("operation_started_at", previous.get("operation_started_at", now) if same_operation else now)
+    fields.setdefault("last_event_at", now)
+    fields.setdefault("heartbeat_at", now)
     fields.setdefault("source_errors", previous.get("source_errors", {}))
     started = previous.get("started_at") if previous.get("state") not in ("retry_pending", "installed", "current") else None
     started = started or datetime.now(timezone.utc).isoformat()
@@ -160,7 +190,43 @@ def record(state: str, **fields) -> dict:
         if estimate > 0:
             value["remaining_seconds"] = int(estimate)
     write_json(folder() / "codex_review_status.json", value)
+    event = {key: value.get(key) for key in ("checked_at", "stage", "source", "operation", "message", "source_index", "source_total")}
+    path = folder()/"codex_review_events.json"
+    try:
+        events = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        events = []
+    if not isinstance(events, list):
+        events = []
+    write_json(path, (events+[event])[-80:])
     return value
+
+
+def touch_runtime(**fields):
+    with _STATUS_LOCK:
+        try:
+            value = json.loads((folder()/"codex_review_status.json").read_text(encoding="utf-8"))
+            if value.get("worker_pid") != os.getpid():
+                return
+            value.update(heartbeat_at=datetime.now(timezone.utc).isoformat(), **fields)
+            write_json(folder()/"codex_review_status.json", value)
+        except (OSError, ValueError):
+            pass
+
+
+@contextmanager
+def runtime_monitor():
+    stop = threading.Event()
+    def monitor():
+        while not stop.wait(3):
+            touch_runtime()
+    thread = threading.Thread(target=monitor, daemon=True)
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join(timeout=1)
 
 
 def _http_json(url: str) -> dict:
@@ -187,7 +253,8 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         raise ReviewError("不是已配置的官方法律入口")
     old_url = url
     try:
-        before_doc = _http_json(RAW + "/main/automation_state/evidence/" + old_hash + ".json")
+        record("fetching_evidence", source=source, operation="恢复旧正文快照", endpoint=url, operation_limit_seconds=90)
+        before_doc = prior_document(old_hash, url)
         before = _verify_document(before_doc, old_hash, url)
     except Exception:
         # Only configured official representations from this same source.
@@ -200,7 +267,8 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
             if candidate_url == url or candidate_url not in knowledge.SOURCES.get(source, ()):
                 continue
             try:
-                doc = _http_json(RAW + "/main/automation_state/evidence/" + candidate_hash + ".json")
+                record("fetching_evidence", source=source, operation="检查同法规备用历史快照", endpoint=candidate_url, operation_limit_seconds=90)
+                doc = prior_document(candidate_hash, candidate_url)
                 candidate_text = _verify_document(doc, candidate_hash, candidate_url)
                 if "eur-lex.europa.eu" in candidate_url and not re.search(r"\bArticle\s+\d+\b", candidate_text):
                     continue
@@ -215,6 +283,7 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
     previous = os.environ.get("POLICY_AMADEUS_EVIDENCE_DIR")
     os.environ["POLICY_AMADEUS_EVIDENCE_DIR"] = str(evidence_dir)
     try:
+        record("fetching_evidence", source=source, operation="获取当前官方正文", endpoint=url, operation_limit_seconds=90)
         new_hash = knowledge._fingerprint(url)
         new_url = url
     except Exception:
@@ -227,6 +296,7 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
             if alternative == url:
                 continue
             try:
+                record("fetching_evidence", source=source, operation="尝试当前官方备用入口", endpoint=alternative, operation_limit_seconds=90)
                 new_hash = knowledge._fingerprint(alternative)
                 new_url = alternative
                 break
@@ -245,6 +315,20 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
             "before": before, "after": after}
 
 
+def prior_document(expected, url):
+    """Recover a matching stored body before relying on cloud availability."""
+    if not re.fullmatch(r"[0-9a-f]{64}", expected or ""):
+        raise ReviewError("缺少可靠旧正文摘要，不能伪造历史比对")
+    for directory in (folder()/"codex_review/evidence", folder()/"knowledge_evidence"):
+        try:
+            doc = json.loads((directory/(expected+".json")).read_text(encoding="utf-8"))
+            _verify_document(doc, expected, url)
+            return doc
+        except (OSError, ValueError, ReviewError):
+            continue
+    return _http_json(RAW+"/main/automation_state/evidence/"+expected+".json")
+
+
 def decision_schema() -> dict:
     string = {"type": "string"}
     patch = {"type": "object", "properties": {"path": string, "value_json": string},
@@ -261,6 +345,8 @@ def codex_json(prompt: str, schema: dict, label: str) -> dict:
                    if key not in {"OPENAI_API_KEY", "CODEX_API_KEY", "POLICY_AMADEUS_PUBLISHER_KEY_B64",
                                   "GITHUB_TOKEN", "GH_TOKEN", "DEEPSEEK_API_KEY", "POLICY_AMADEUS_AI_AUDIT_KEY"}}
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    stage = "verifying" if label == "verification" else "reviewing"
+    record("reviewing", stage=stage, operation="检查现有审查账户", operation_limit_seconds=30)
     auth = subprocess.run([str(executable), "login", "status"], capture_output=True,
         text=True, encoding="utf-8", errors="replace", timeout=30, env=environment, creationflags=flags)
     if auth.returncode or "Logged in using ChatGPT" not in auth.stdout + auth.stderr:
@@ -278,11 +364,31 @@ def codex_json(prompt: str, schema: dict, label: str) -> dict:
                     "computer_use", "code_mode_host", "workspace_dependencies", "skill_search", "multi_agent"):
         command.extend(("--disable", feature))
     command.append("-")
-    try:
-        result = subprocess.run(command, input=prompt, capture_output=True, text=True,
-            encoding="utf-8", errors="replace", timeout=900, env=environment, creationflags=flags)
-    except subprocess.TimeoutExpired:
-        raise ReviewError("Codex 自动审查超时；待办和规则已保留，稍后重试") from None
+    record("reviewing", stage=stage, operation="独立复核结论" if label == "verification" else "核对正文并形成修复候选",
+           operation_limit_seconds=900, model_round=2 if label == "verification" else 1)
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, encoding="utf-8", errors="replace", env=environment, creationflags=flags)
+    deadline = time.monotonic()+900
+    initial, seen = True, 0
+    while True:
+        try:
+            stdout, stderr = process.communicate(input=prompt if initial else None, timeout=5)
+            result = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+            touch_runtime(model_pid=None, model_running=False)
+            break
+        except subprocess.TimeoutExpired as exc:
+            initial = False
+            output_so_far = exc.output or b""
+            fields = {"model_pid": process.pid, "model_running": process.poll() is None}
+            if len(output_so_far) > seen:
+                seen = len(output_so_far)
+                fields.update(model_event_bytes=seen, last_model_output_at=datetime.now(timezone.utc).isoformat())
+            touch_runtime(**fields)
+            if time.monotonic() >= deadline:
+                process.kill()
+                process.communicate()
+                touch_runtime(model_pid=None, model_running=False)
+                raise ReviewError("Codex 自动审查超时；待办和规则已保留，稍后重试") from None
     # Tools are not needed for a supplied public-evidence review. Reject any tool use.
     item_types = []
     for line in result.stdout.splitlines():
@@ -594,7 +700,7 @@ def publish_proposal(session, head: str, tree: str, proposal: dict) -> str:
 def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
     if not enabled():
         return {"state": "disabled"}
-    with worker_lock() as acquired:
+    with worker_lock() as acquired, runtime_monitor():
         if not acquired:
             return {"state": "already_running"}
         try:
@@ -609,23 +715,32 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                     return previous_state
             except (OSError, ValueError, KeyError):
                 pass
-            record("preparing", message="正在检查发布授权与签名规则基线")
+            record("preparing", source=None, source_index=0, source_total=len(report["changed"]),
+                   operation="检查发布授权与签名规则基线", operation_limit_seconds=240,
+                   message="正在检查发布授权与签名规则基线")
             session = _repository_session()
             head, tree, pack = signed_repository_base(session)
             cache = json.loads((folder() / "knowledge_source_state.json").read_text(encoding="utf-8"))["sources"]
             source_errors = dict(previous_state.get("source_errors", {}))
             evidence = None
-            for source in report["changed"]:
+            for source_index, source in enumerate(report["changed"], 1):
+                from codex_handoff import defer_source
+                if defer_source(source):
+                    continue
                 recent = source_errors.get(source, {})
                 if time.time() - recent.get("failed_at", 0) < 3600:
                     continue
                 for url in report.get("pending_source_fingerprints", {}).get(source, {}):
-                    record("fetching_evidence", source=source, source_errors=source_errors, message="正在获取新旧官方法律正文")
+                    record("fetching_evidence", source=source, source_index=source_index,
+                           source_total=len(report["changed"]), source_errors=source_errors,
+                           operation="准备该国家的正文证据", message="正在获取新旧官方法律正文")
                     try:
                         evidence = prepare_evidence(source, url, cache.get(source, {}).get(url, ""), cache.get(source, {}))
                         break
                     except Exception as exc:
                         source_errors[source] = {"failed_at": time.time(), "reason": str(exc) if isinstance(exc, ReviewError) else type(exc).__name__}
+                        record("fetching_evidence", source=source, source_errors=source_errors,
+                               operation="记录失败并交接，继续其他国家", message="该入口无法自动处理，已记录具体原因")
                 if evidence is not None:
                     break
             if evidence is None:
@@ -663,7 +778,11 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             if not wait_for_install:
                 return state
             from rulepack_manager import configured_manifest_url, load_rulepack, update_from_manifest
-            for _ in range(30):
+            for poll_index in range(30):
+                record("awaiting_cloud_tests", source=source, proposal_id=proposal_id, commit=commit,
+                       source_errors=source_errors, cloud_poll=poll_index+1, cloud_poll_total=30,
+                       operation="检查云端测试和签名发布", operation_limit_seconds=120,
+                       message="候选已提交，正在检查云端测试与签名结果")
                 try:
                     update_from_manifest(configured_manifest_url())
                 except Exception:
@@ -708,6 +827,11 @@ def read_review_status() -> dict:
             if age > 2100:
                 status.update(state="retry_pending", remaining_seconds=None,
                               message="后台更新状态长时间未刷新；等待定时任务重试，未完成安装")
+        try:
+            from codex_handoff import summary
+            status["handoff"] = summary()
+        except Exception:
+            pass
         return status
     except (OSError, ValueError, KeyError):
         return {"state": "not_started", "progress_percent": 0, "message": "自动更新尚未启动，等待后台重试"}

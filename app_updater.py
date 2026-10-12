@@ -111,6 +111,18 @@ def _record(result: dict[str, object]) -> dict[str, object]:
     return result
 
 
+def _handoff_app_failure(exc):
+    try:
+        import codex_handoff as handoff
+        handoff.submit({"state": "retry_pending", "failure_source": "__app_update__",
+                        "failure_type": type(exc).__name__, "message": "程序更新检查或安装暂未成功"})
+        handoff.dispatch()
+    except Exception:
+        # A chat connection cannot suppress normal local retries or the
+        # original application failure report.
+        pass
+
+
 def _already_staged(version: str, digest: str) -> bool:
     try:
         pending = json.loads((_data_dir() / "pending_app_update.json").read_text(encoding="utf-8"))
@@ -207,6 +219,7 @@ def run_auto_update() -> dict[str, object]:
         result.update(_stage_app_update())
     except Exception as exc:
         result.update({"app": "failed", "app_error": str(exc)})
+        _handoff_app_failure(exc)
     try:
         from knowledge_update import run_startup_check
 
@@ -254,6 +267,7 @@ def start_app_update_check() -> None:
             result = _stage_app_update()
         except Exception as exc:
             result = {"app": "failed", "app_error": str(exc)}
+            _handoff_app_failure(exc)
         from update_storage import write_json
         write_json(_data_dir() / "app_update_launch_status.json", {"checked_at": datetime.now().astimezone().isoformat(), **result})
 
