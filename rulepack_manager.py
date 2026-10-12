@@ -141,7 +141,8 @@ def update_from_manifest(manifest_url: str) -> dict[str, str]:
         raise RulepackError("规则包更新地址必须使用 HTTPS")
     import requests
 
-    response = requests.get(manifest_url, timeout=10)
+    from signed_channel_transport import get as channel_get
+    response = channel_get(manifest_url, timeout=10)
     response.raise_for_status()
     manifest = response.json()
     download_url = str(manifest.get("download_url", ""))
@@ -166,7 +167,7 @@ def update_from_manifest(manifest_url: str) -> dict[str, str]:
     current = load_rulepack()
     if version_key(str(manifest.get("rulepack_version", ""))) <= version_key(str(current["rulepack_version"])):
         return {"state": "current", "message": f"规则包已是最新版本 {current['rulepack_version']}"}
-    payload = requests.get(download_url, timeout=20)
+    payload = channel_get(download_url, timeout=20)
     payload.raise_for_status()
     if hashlib.sha256(payload.content).hexdigest() != expected:
         raise RulepackError("下载规则包的SHA-256校验失败")

@@ -33,7 +33,8 @@ def _release_get(url: str, **kwargs):
         url=urlunsplit((parsed.scheme,parsed.netloc,parsed.path,urlencode(query),parsed.fragment))
     for attempt in range(3):
         try:
-            response = requests.get(url, **kwargs)
+            from signed_channel_transport import get as channel_get
+            response = channel_get(url, **kwargs)
             if response.status_code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
                 return response
             response.close()

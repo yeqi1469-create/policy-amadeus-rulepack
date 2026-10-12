@@ -39,7 +39,7 @@ def handoff_label(update):
         return "已调查，等待程序安装与法律证据复核"
     if state == "awaiting_chat":
         if handoff.get("awaiting_evidence"):
-            return "已有调查记录；新增证据仍待当前聊天复核"
+            return "已有调查记录；新增证据须复核，可信正文恢复后自动继续"
         return "修复请求已排入当前聊天，等待接手"
     if state == "queued":
         return "工单已保存；聊天发送失败，等恢复连接重试" if handoff.get("delivery_failed") else "工单已保存，准备按需发送当前聊天"
@@ -145,7 +145,13 @@ def update_detail_text(status, events=(), requests=(), now=None):
     if update.get("cloud_poll"):
         lines.append(f"签名发布检查：{update['cloud_poll']}/{update.get('cloud_poll_total',30)}次")
     if update.get("retry_at"):
-        lines.append("后台重试最早时间："+str(update["retry_at"])+"（实际还受任务调度影响）")
+        try:
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+            retry_caption=datetime.fromisoformat(str(update['retry_at'])).astimezone(ZoneInfo('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S 北京时间')
+        except (ValueError,TypeError):
+            retry_caption=str(update['retry_at'])
+        lines.append("后台重试最早时间："+retry_caption+"（实际还受任务调度影响）")
     lines.extend(("", "逐国未解决原因："))
     for source, failure in update.get("source_errors", {}).items():
         lines.append(str(source)+"："+str(failure.get("reason", "原因尚未确认")))
