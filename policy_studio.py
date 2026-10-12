@@ -62,6 +62,13 @@ VERIFIED_MARKETS = {
     "Luxembourg", "Malta", "Cyprus", "Norway", "Iceland", "Liechtenstein", "United Kingdom",
     "Switzerland", "Turkey",
 }
+def available_verified_markets():
+    from rulepack_manager import load_rulepack
+    try:
+        profiles=load_rulepack().get('coverage_groups',{})
+        return VERIFIED_MARKETS|{country for country in EUROPE_MARKETS if 'LOCAL:'+country in profiles}
+    except RuntimeError:
+        return set(VERIFIED_MARKETS)
 MARKET_NAMES_CN = dict(zip(EUROPE_MARKETS, (
     "德国", "英国", "法国", "意大利", "俄罗斯", "西班牙", "土耳其", "荷兰", "瑞士", "波兰",
     "比利时", "瑞典", "奥地利", "挪威", "丹麦", "爱尔兰", "芬兰", "罗马尼亚", "捷克",
@@ -203,7 +210,8 @@ class PolicyStudio(tk.Tk):
             self.output_language.set(saved_language)
             self.language_display.set(saved_language)
         saved_countries = [item.strip() for item in re.split(r"[,，、;；\n]+", str(data.get("country", ""))) if item.strip()]
-        selected = [name for name in saved_countries if name in self._country_choices and name in VERIFIED_MARKETS]
+        eligible=available_verified_markets()
+        selected = [name for name in saved_countries if name in self._country_choices and name in eligible]
         for name in selected:
             self._country_choices[name].set(True)
         if selected:
@@ -556,7 +564,8 @@ class PolicyStudio(tk.Tk):
         self._button(self.footer, "下一步", self._next_country, True).pack(side="right")
 
     def _update_country_selection(self) -> None:
-        selected = [name for name in EUROPE_MARKETS if name in VERIFIED_MARKETS and self._country_choices[name].get()]
+        eligible=available_verified_markets()
+        selected = [name for name in EUROPE_MARKETS if name in eligible and self._country_choices[name].get()]
         self.country.set("，".join(selected))
         selected_cn = [MARKET_NAMES_CN[name] for name in selected]
         self.country_display.set(
@@ -587,7 +596,8 @@ class PolicyStudio(tk.Tk):
         scrollbar.configure(command=country_list.yview)
         scrollbar.pack(side="right", fill="y")
         country_list.pack(side="left", fill="both", expand=True)
-        selectable_markets = [market for market in EUROPE_MARKETS if market in VERIFIED_MARKETS]
+        eligible=available_verified_markets()
+        selectable_markets = [market for market in EUROPE_MARKETS if market in eligible]
         for index, market in enumerate(selectable_markets):
             country_list.insert("end", MARKET_NAMES_CN[market])
             if self._country_choices[market].get():
