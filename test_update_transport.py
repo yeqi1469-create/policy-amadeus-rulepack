@@ -31,17 +31,33 @@ class UpdateTransportTests(unittest.TestCase):
 
     def test_repository_read_failure_bounded_and_auth_denial_not_retried(self):
         session = Mock()
+        session.headers={}
         session.get.side_effect = requests.ReadTimeout()
-        with patch.object(worker, "folder", return_value=__import__('pathlib').Path('synthetic-absent-folder')), patch.object(worker.time, "sleep"):
+        direct=Mock()
+        direct.get.side_effect=requests.ReadTimeout()
+        with patch.object(worker, "folder", return_value=__import__('pathlib').Path('synthetic-absent-folder')), patch.object(worker.time, "sleep"),patch('requests.Session',return_value=direct):
             with self.assertRaises(requests.ReadTimeout):
                 worker._api(session, "GET", "")
         self.assertEqual(session.get.call_count, 3)
+        direct.get.assert_called_once()
         session = Mock()
         session.get.return_value = Mock(status_code=403)
         with patch.object(worker, "folder", return_value=__import__('pathlib').Path('synthetic-absent-folder')):
             with self.assertRaises(worker.ReviewError):
                 worker._api(session, "GET", "")
         session.get.assert_called_once()
+
+    def test_publisher_proxy_recovery_keeps_tls_and_never_retries_write(self):
+        session=Mock(headers={'Authorization':'synthetic-test-only'})
+        session.get.side_effect=requests.ReadTimeout()
+        direct=Mock()
+        direct.get.return_value=Mock(status_code=200)
+        direct.get.return_value.json.return_value={'ok':True}
+        with patch('requests.Session',return_value=direct),patch.object(worker.time,'sleep'):
+            self.assertEqual(worker._api(session,'GET',''),{'ok':True})
+        self.assertFalse(direct.trust_env)
+        self.assertNotIn('verify',direct.get.call_args.kwargs)
+        self.assertFalse(session.trust_env)
 
     def test_timeout_retries_then_succeeds(self):
         response = Mock(status_code=200)

@@ -283,7 +283,18 @@ def _read_get(url: str, *, session=None, timeout=(10, 30), **kwargs):
             response.close()
         except (requests.Timeout, requests.ConnectionError):
             if attempt == 2:
-                raise
+                if urlparse(url).hostname not in {'api.github.com','raw.githubusercontent.com'}:
+                    raise
+                # A broken system proxy must not permanently strand signed
+                # updates. Only these publisher hosts may use verified direct
+                # TLS; certificates remain mandatory. Never retry a write.
+                direct=requests.Session()
+                direct.trust_env=False
+                if session is not None: direct.headers.update(session.headers)
+                response=direct.get(url,timeout=timeout,**kwargs)
+                response.raise_for_status()
+                if session is not None: session.trust_env=False
+                return response
         time.sleep((1, 3)[attempt])
     raise RuntimeError("Unreachable read retry state")
 
@@ -638,16 +649,20 @@ def validate_proposal(proposal: dict, pack: dict) -> None:
                           "new": evidence["new_sha256"], "base": digest(pack)})
     if proposal.get("id") != expected_id:
         raise ReviewError("候选编号未匹配官方证据和规则包基础")
-    if evidence["url"] not in SOURCES.get(evidence["source"], ()):
-        raise ReviewError("提案不是已配置官方来源")
-    old_url = evidence.get("old_url", evidence["url"])
-    new_url = evidence.get("new_url", evidence["url"])
-    if old_url not in SOURCES.get(evidence["source"], ()):
-        raise ReviewError("旧正文不是该法规已配置的官方表示")
-    if new_url not in SOURCES.get(evidence["source"], ()):
-        raise ReviewError("新正文不是该法规已配置的官方表示")
-    _verify_document({"url": old_url, "normalized_text": evidence["before"]}, evidence["old_sha256"], old_url)
-    _verify_document({"url": new_url, "normalized_text": evidence["after"]}, evidence["new_sha256"], new_url)
+    from current_law_review import MODE, validate as validate_current
+    if evidence.get('mode') == MODE:
+        validate_current(evidence,decision,verifier)
+    else:
+        if evidence["url"] not in SOURCES.get(evidence["source"], ()):
+            raise ReviewError("提案不是已配置官方来源")
+        old_url = evidence.get("old_url", evidence["url"])
+        new_url = evidence.get("new_url", evidence["url"])
+        if old_url not in SOURCES.get(evidence["source"], ()):
+            raise ReviewError("旧正文不是该法规已配置的官方表示")
+        if new_url not in SOURCES.get(evidence["source"], ()):
+            raise ReviewError("新正文不是该法规已配置的官方表示")
+        _verify_document({"url": old_url, "normalized_text": evidence["before"]}, evidence["old_sha256"], old_url)
+        _verify_document({"url": new_url, "normalized_text": evidence["after"]}, evidence["new_sha256"], new_url)
     if decision.get("classification") not in CLASSES - {"insufficient_evidence"} or verifier.get("approved") is not True:
         raise ReviewError("自动审查未形成双轮一致结论；保留待办并重试")
     for row in (decision, verifier):
@@ -755,7 +770,9 @@ def merge_proposal(pack: dict, proposal: dict, now: datetime | None = None) -> d
     result.setdefault("codex_review_history", []).append({"id": proposal["id"], "source": evidence["source"],
         "url": evidence["url"], "sha256": evidence["new_sha256"], "classification": decision["classification"],
         "reason": decision["reason"], "quotes": decision["quotes"], "second_review_reason": proposal["verification"]["reason"],
-        "reviewed_at": now.isoformat(), "method": "two_local_subscription_reviews_then_cloud_tests"})
+        "reviewed_at": now.isoformat(), "method": "two_local_subscription_reviews_then_cloud_tests",
+        "evidence_mode":evidence.get('mode','historical_comparison'),
+        "historical_body_available":evidence.get('historical_body_available',True)})
     return result
 
 
@@ -946,7 +963,12 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                            source_total=len(report["changed"]), source_errors=source_errors,
                            operation="准备该国家的正文证据", message="正在获取新旧官方法律正文")
                     try:
-                        evidence = prepare_evidence(source, url, cache.get(source, {}).get(url, ""), cache.get(source, {}))
+                        try:
+                            evidence = prepare_evidence(source, url, cache.get(source, {}).get(url, ""), cache.get(source, {}))
+                            lossless_review_evidence(evidence)
+                        except (ReviewError,OSError) as comparison_error:
+                            from current_law_review import prepare as prepare_current
+                            evidence = prepare_current(source,url,type(comparison_error).__name__)
                         break
                     except Exception as exc:
                         source_errors[source] = {"failed_at": time.time(), "reason": str(exc) if isinstance(exc, ReviewError) else type(exc).__name__}
@@ -962,7 +984,8 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             if proposal_path.exists():
                 proposal = json.loads(proposal_path.read_text(encoding="utf-8"))
             else:
-                decision, verifier = review(evidence, pack)
+                from current_law_review import MODE, review as review_current
+                decision, verifier = review_current(evidence,pack) if evidence.get('mode')==MODE else review(evidence, pack)
                 proposal = {"id": proposal_id, "base_rulepack_sha256": digest(pack), "evidence": evidence,
                             "decision": decision, "verification": verifier}
                 validate_proposal(proposal, pack)
@@ -1036,9 +1059,15 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
 
 
 def run(*, wait_for_install=True, retry_now=False) -> dict:
-    for _ in range(3):
+    seen_failures=set()
+    for _ in range(51):
         result = _run_one(wait_for_install=wait_for_install, retry_now=retry_now)
-        if result.get("state") not in ("more_reviews_pending", "retry_pending") or not result.get("source_errors"):
+        if result.get('state')=='retry_pending':
+            failure_signature=digest(result.get('source_errors',{}))
+            if not result.get('source_errors') or failure_signature in seen_failures:
+                return result
+            seen_failures.add(failure_signature)
+        elif result.get("state") != "more_reviews_pending":
             return result
         retry_now = True
     return result
@@ -1069,6 +1098,13 @@ def launch_if_needed() -> None:
         report = json.loads((folder()/"knowledge_coverage_latest.json").read_text(encoding="utf-8"))
         if not report.get("changed"):
             return
+        previous=read_review_status()
+        if previous.get('state')=='retry_pending':
+            try:
+                if (datetime.now(timezone.utc)-datetime.fromisoformat(previous['checked_at'])).total_seconds()<3600:
+                    return
+            except (KeyError,ValueError):
+                pass
         if getattr(sys, "frozen", False):
             command = [sys.executable, "--auto-review"]
         else:

@@ -11,7 +11,8 @@ from update_storage import write_json
 
 candidate=Path(sys.argv[1]).resolve()
 version=sys.argv[2]
-root=Path('tmp/startup_relaunch_audit').resolve()
+root=Path('tmp/startup_relaunch_audit')/str(time.time_ns())
+root=root.resolve()
 root.mkdir(parents=True,exist_ok=True)
 target,stage=root/'Policy Amadeus.exe',root/'staged.exe'
 shutil.copyfile(candidate,target)

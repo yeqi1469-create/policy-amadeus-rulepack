@@ -206,6 +206,9 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
     ),
     "Croatia": ("https://narodne-novine.nn.hr/clanci/sluzbeni/2014_06_76_1443.html",),
     "Serbia": (
+        # Adopted 23 April 2026, gazette 35/26: full single-act text. The
+        # gazette fallback contains other acts and advertising as well.
+        "https://www.parlament.gov.rs/upload/archive/files/lat/pdf/zakoni/14_saziv/1317-26-lat..pdf",
         "https://www.pravno-informacioni-sistem.rs/",
         "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1",
     ),
