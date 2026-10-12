@@ -21,7 +21,7 @@
       "https://slgl.pravno-informacioni-sistem.rs/api/prins/viewdoc?uuid=5e1627a4-81c0-452d-9f5c-d8c3ab84ddd1": "109159d7e7b84198efe600ff16ecedbe2ac6bdfe02aec029d49e4210c7f4ef7a"
     }
   },
-  "checked_at": "2026-10-12T09:20:49.397474+00:00",
+  "checked_at": "2026-10-12T10:00:47.835607+00:00",
   "state": "review_required",
   "message": "官方法律来源发生变化，知识库需要人工复核，已暂停政策生成。",
   "changed": [
@@ -34,9 +34,9 @@
   ],
   "unreachable": [
     "Country — Romania",
-    "Turkey distance contracts",
     "Country — Iceland",
-    "Country — Ukraine"
+    "Country — Ukraine",
+    "Germany BGB"
   ],
   "countries": {
     "Germany": {
@@ -205,7 +205,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397357+00:00"
+      "checked_at": "2026-10-12T10:00:47.835415+00:00"
     },
     "Czechia": {
       "status": "source_fingerprint_no_change",
@@ -248,7 +248,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397375+00:00"
+      "checked_at": "2026-10-12T10:00:47.835445+00:00"
     },
     "Slovakia": {
       "status": "source_fingerprint_no_change",
@@ -285,7 +285,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397390+00:00"
+      "checked_at": "2026-10-12T10:00:47.835469+00:00"
     },
     "Lithuania": {
       "status": "source_changed",
@@ -294,7 +294,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397394+00:00"
+      "checked_at": "2026-10-12T10:00:47.835476+00:00"
     },
     "Slovenia": {
       "status": "source_fingerprint_no_change",
@@ -312,7 +312,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397401+00:00"
+      "checked_at": "2026-10-12T10:00:47.835488+00:00"
     },
     "Estonia": {
       "status": "source_fingerprint_no_change",
@@ -340,7 +340,7 @@
       "official_sources_reached": [],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397411+00:00"
+      "checked_at": "2026-10-12T10:00:47.835505+00:00"
     },
     "Bosnia and Herzegovina": {
       "status": "source_fingerprint_no_change",
@@ -429,7 +429,7 @@
       ],
       "verification_method": "configured_source_fingerprint_and_scheduled_effective_dates",
       "full_national_legal_review_completed": false,
-      "checked_at": "2026-10-12T09:20:49.397441+00:00"
+      "checked_at": "2026-10-12T10:00:47.835556+00:00"
     },
     "Luxembourg": {
       "status": "source_fingerprint_no_change",
@@ -511,31 +511,28 @@
     "state": "cloud_source_run"
   },
   "mode": "incremental",
-  "last_full_checked_at": "2026-10-12T09:20:49.397478+00:00",
+  "last_full_checked_at": "2026-10-12T10:00:47.835613+00:00",
   "observed_source_fingerprints": {
     "EU GDPR obligations": {
       "https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/obligations_en": "1237563897624c1d9389873ae99d1af0b804286b76055f4c2a27f4b229a9d2bf"
     },
-    "EU Consumer Rights Directive": {
-      "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
-    },
     "EU Sale of Goods Directive": {
       "https://publications.europa.eu/resource/celex/02019L0771-20260731": "31d0ee18ae2fd56538512a3869ae038497e5168d01a3191560db34b0f50d7d8d"
     },
-    "Germany BGB": {
-      "https://www.gesetze-im-internet.de/bgb/": "7bc9f2d81ee9454525f738e3819e7c032d92095877e53c6550b99e0955fb681b"
+    "EU Consumer Rights Directive": {
+      "https://publications.europa.eu/resource/celex/02011L0083-20260927": "321c0bfb910bfafd4fbafeef4c30ca874c2365125782bcaa52483bfb2951c69f"
     },
     "UK distance selling": {
       "https://www.gov.uk/online-and-distance-selling-for-businesses/distance-selling": "5fbfbbb2edc0844b713797e7cd449e0e671355be040bf8b37041680c46a70f6c"
     },
-    "Country — Germany": {
-      "https://www.gesetze-im-internet.de/bgb/": "7bc9f2d81ee9454525f738e3819e7c032d92095877e53c6550b99e0955fb681b"
-    },
     "Swiss ecommerce obligations": {
-      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e",
+      "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722",
       "https://www.kmu.admin.ch/en/statutory-obligations-swiss-and-european-e-commerce-laws": "c3d4f8e8a5015a67666815b8da2973dffb4600482c9765f5846b669600eac402",
       "https://www.seco.admin.ch/de/onlinehandel": "f8e20b8c9fbe9242a11a7761db1e5d3534936da1e20bd4e946fe4371834bf4de",
-      "https://www.seco.admin.ch/fr/commerce-electronique": "063753cf4804ee1001c2f9a7e7c4cf9a72a36cdfd20bfc1e6ddce1658f8ca722"
+      "https://www.fedlex.admin.ch/eli/cc/241/en": "9f49dcfdae5ed3d9de3423956bd8883d558a075ca5cab89c9bd6c6b39327961e"
+    },
+    "Turkey distance contracts": {
+      "https://tuketici.ticaret.gov.tr/yayinlar/tuketici-bilgi-rehberi/mesafeli-sozlesmeler-hakkinda-bilgilendirme": "f0017a5ee78cc75f8ad40fce889e99bee781f5c167f78a1f25f926d45c63e2f1"
     },
     "Country — Lithuania": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr": "9a82b12f14eb0553c84eed5d1a1c9036857dd62788e0cf9360af25f27f1cc1ed"
