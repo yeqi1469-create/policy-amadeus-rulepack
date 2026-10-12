@@ -13,7 +13,7 @@ from tkinter import filedialog, ttk
 from PIL import Image, ImageTk
 from knowledge_update import get_status, start_startup_check
 from update_progress import progress_caption, activity_caption, update_detail_text
-from policy_generator import extract_license_data, generate_translated_bundle
+from policy_generator import extract_license_data, extract_license_fields, generate_translated_bundle
 
 
 def group_market_values(markets, value_for_market):
@@ -79,6 +79,17 @@ OUTPUT_LANGUAGES = (
     "罗曼什语", "黑山语", "拉丁语",
 )
 
+LICENSE_LABELS = (
+    ("资料类型", "profile_type"), ("组织名称", "organization_name"),
+    ("法定名称", "legal_name"), ("公司注册号", "registration_number"),
+    ("企业/法人形式", "legal_form"), ("法定代表人/董事", "authorized_representative"),
+    ("登记机关", "register_name"), ("VAT ID（仅执照明确记载时）", "vat_id"),
+    ("街道地址", "street_address"), ("公寓/套房/门牌号", "unit"),
+    ("邮政编码", "postal_code"), ("城市/区", "city"),
+    ("国家/地区", "country"), ("D-U-N-S 编码", "duns_number"),
+    ("名字", "first_name"), ("姓氏", "last_name"),
+)
+
 
 def resource_path(name: str) -> Path:
     return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / name
@@ -120,6 +131,8 @@ class PolicyStudio(tk.Tk):
         self.copy_status = tk.StringVar(value="请选择要复制的政策")
         self.knowledge_status = tk.StringVar(value="正在检查政策知识库更新……")
         self._generation_queue: queue.Queue = queue.Queue()
+        self._license_queue: queue.Queue = queue.Queue()
+        self._license_busy = False
         self.step = 0
         self._resize_job = None
         self._background_photo = None
@@ -200,7 +213,13 @@ class PolicyStudio(tk.Tk):
     def _build_card(self) -> None:
         header = tk.Frame(self.card, bg=PANEL, padx=30, pady=9)
         header.pack(fill="x")
-        tk.Label(header, text=APP_TITLE, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 20, "bold")).pack(anchor="w")
+        title_row = tk.Frame(header, bg=PANEL)
+        title_row.pack(fill="x")
+        tk.Label(title_row, text=APP_TITLE, bg=PANEL, fg=WHITE, font=("Microsoft YaHei UI", 20, "bold")).pack(side="left")
+        self._license_button = tk.Button(title_row, text="提取执照信息", command=self._extract_license,
+            bg="#343b47", fg=WHITE, activebackground=ORANGE, activeforeground=WHITE,
+            relief="flat", font=("Microsoft YaHei UI", 9), padx=8, pady=5)
+        self._license_button.pack(side="right")
         tk.Label(header, text="三步完成店铺基础资料设置", bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 10)).pack(anchor="w", pady=(5, 0))
         tk.Label(header, textvariable=self.knowledge_status, bg=PANEL, fg=ORANGE,
                  wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
@@ -615,17 +634,7 @@ class PolicyStudio(tk.Tk):
         markets = self.settings.get("markets") or [self.settings]
         extracted = []
         licence_fields = self.settings.get("license_fields") or markets[0].get("license_fields", {})
-        licence_labels = (
-            ("资料类型", "profile_type"), ("组织名称", "organization_name"),
-            ("法定名称", "legal_name"), ("公司注册号", "registration_number"),
-            ("企业/法人形式", "legal_form"), ("法定代表人/董事", "authorized_representative"),
-            ("登记机关", "register_name"), ("VAT ID（仅执照明确记载时）", "vat_id"),
-            ("街道地址", "street_address"), ("公寓/套房/门牌号", "unit"),
-            ("邮政编码", "postal_code"), ("城市/区", "city"),
-            ("国家/地区", "country"), ("D-U-N-S 编码", "duns_number"),
-            ("名字", "first_name"), ("姓氏", "last_name"),
-        )
-        for label, key in licence_labels:
+        for label, key in LICENSE_LABELS:
             value = str(licence_fields.get(key, "")).strip()
             extracted.append((f"执照 · {label}", value or "未识别（请对照执照手动确认）"))
         def country_names(items) -> str:
@@ -749,6 +758,96 @@ class PolicyStudio(tk.Tk):
             return
         self.pdf_path.set(selected)
         self.show_step(2)
+
+    def _extract_license(self) -> None:
+        """Read company fields independently of legal checks and policy generation."""
+        if self._license_busy:
+            return
+        selected = filedialog.askopenfilename(parent=self, title="提取执照信息 · 选择 PDF",
+                                             filetypes=(("PDF 文件", "*.pdf"),))
+        if not selected:
+            return
+        path = Path(selected)
+        if not path.is_file() or path.suffix.lower() != ".pdf":
+            self._app_dialog("请选择 PDF", "请选择一个有效的公司执照 PDF 文件。")
+            return
+        self.pdf_path.set(str(path))
+        self._license_busy = True
+        self._license_button.configure(state="disabled", text="正在提取执照…")
+        threading.Thread(target=self._extract_license_worker, args=(str(path),), daemon=True).start()
+        self.after(100, self._poll_license)
+
+    def _extract_license_worker(self, path: str) -> None:
+        # No Tk calls, policy gate, online translation or update-cache writes.
+        try:
+            self._license_queue.put(("ok", extract_license_fields(path)))
+        except Exception:
+            self._license_queue.put(("error", "无法读取此 PDF，请确认文件可正常打开且未被加密。"))
+
+    def _poll_license(self) -> None:
+        try:
+            state, payload = self._license_queue.get_nowait()
+        except queue.Empty:
+            self.after(100, self._poll_license)
+            return
+        self._license_busy = False
+        self._license_button.configure(state="normal", text="提取执照信息")
+        if state == "error":
+            self._app_dialog("执照提取失败", payload)
+            return
+        self._show_license_fields(payload)
+
+    def _show_license_fields(self, fields: dict[str, str]) -> None:
+        previous = getattr(self, "_license_window", None)
+        if previous is not None and previous.winfo_exists():
+            previous.destroy()
+        window = self._license_window = tk.Toplevel(self)
+        window.title("执照提取结果 · 不依赖政策更新")
+        window.configure(bg=PANEL)
+        window.geometry("760x560")
+        window.minsize(620, 420)
+        tk.Label(window, text="执照信息", bg=PANEL, fg=WHITE,
+                 font=("Microsoft YaHei UI", 16, "bold")).pack(anchor="w", padx=18, pady=(14, 6))
+        has_identity = any(str(fields.get(key, "")).strip() for key in
+                           ("legal_name", "registration_number", "street_address"))
+        guidance = ("仅提取执照资料，不代表政策已更新。请对照原件核实，未识别字段不会补造。"
+                    if has_identity else "未识别到主要公司资料。扫描件、加密 PDF 或不支持的文本格式可能无法识别；请对照原件。")
+        tk.Label(window, text=guidance, bg=PANEL, fg=MUTED, wraplength=580, justify="left",
+                 font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=18, pady=(0, 8))
+        copy_notice = tk.StringVar(master=window, value="可逐项复制，或复制全部字段")
+        footer = tk.Frame(window, bg=PANEL, padx=18, pady=10)
+        footer.pack(side="bottom", fill="x")
+        rows = [(label, str(fields.get(key, "")).strip() or "未识别（请对照原件确认）")
+                for label, key in LICENSE_LABELS]
+        def copy(value: str, label: str) -> None:
+            self.clipboard_clear()
+            self.clipboard_append(value)
+            copy_notice.set(f"已复制：{label}")
+        self._button(footer, "复制全部字段", lambda: copy("\n".join(f"{label}：{value}" for label, value in rows), "全部字段"), True).pack(side="left")
+        self._button(footer, "关闭", window.destroy).pack(side="right")
+        tk.Label(window, textvariable=copy_notice, bg=PANEL, fg=MUTED,
+                 font=("Microsoft YaHei UI", 9)).pack(side="bottom", anchor="w", padx=18)
+        viewport = tk.Canvas(window, bg=PANEL, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(window, orient="vertical", command=viewport.yview)
+        viewport.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        viewport.pack(fill="both", expand=True, padx=(18, 0))
+        body = tk.Frame(viewport, bg=PANEL)
+        item = viewport.create_window((0, 0), window=body, anchor="nw")
+        viewport.bind("<Configure>", lambda event: viewport.itemconfigure(item, width=max(1, event.width)))
+        body.bind("<Configure>", lambda _event: viewport.configure(scrollregion=viewport.bbox("all")))
+        for label, value in rows:
+            row = tk.Frame(body, bg=PANEL, pady=4)
+            row.pack(fill="x")
+            tk.Label(row, text=label, bg=PANEL, fg=ORANGE,
+                     font=("Microsoft YaHei UI", 9, "bold")).pack(anchor="w")
+            self._button(row, "复制", lambda v=value, n=label: copy(v, n)).pack(side="right", padx=(8, 10))
+            field = tk.Text(row, height=2, wrap="word", bg="#1d2430", fg=WHITE, relief="flat",
+                            font=("Microsoft YaHei UI", 10), selectbackground=ORANGE)
+            field.insert("1.0", value)
+            field.configure(state="disabled")
+            field.pack(fill="x")
+            field.bind("<MouseWheel>", lambda event: viewport.yview_scroll(-1 if event.delta > 0 else 1, "units"))
 
     def _ask_for_phone(self) -> bool:
         value = self._app_dialog("请输入客服电话", "请输入所有政策中统一使用的客服电话：", self.phone.get())
