@@ -87,6 +87,23 @@ class FullCurrentRevalidationTests(unittest.TestCase):
         self.assertTrue(result['supported'])
         self.assertEqual(set(result['policies']),worker.POLICIES)
         self.assertIn('Synthetic Verification Store',result['policies']['Contact Information'])
+    def test_invalid_segment_gets_one_correction_without_relaxing_quotes(self):
+        self.evidence['after']='Article 1. Synthetic consumer-law provision.\n'*12000
+        self.evidence['new_sha256']=hashlib.sha256(self.evidence['after'].encode()).hexdigest()
+        bad={'reviewed_entire_chunk':True,'reason':'Read','findings':[{'quote':'invented quote'}]}
+        good={'reviewed_entire_chunk':True,'reason':'Read','findings':[]}
+        count=len(current.chunks(self.evidence['after']))*2
+        with patch.object(worker,'codex_json',side_effect=[bad,good]+[good]*(count-1)+[self.decision,self.verifier]) as model,patch.object(worker,'record'):
+            current.review(self.evidence,self.pack)
+        self.assertEqual(model.call_count,count+3)
+        self.assertTrue(list((worker.folder()/'codex_review/segments').glob('*.rejected.json')))
+    def test_invalid_correction_still_blocks_approval(self):
+        self.evidence['after']='Article 1. Synthetic consumer-law provision.\n'*12000
+        self.evidence['new_sha256']=hashlib.sha256(self.evidence['after'].encode()).hexdigest()
+        bad={'reviewed_entire_chunk':True,'reason':'Read','findings':[{'quote':'invented quote'}]}
+        with patch.object(worker,'codex_json',return_value=bad) as model,patch.object(worker,'record'):
+            with self.assertRaises(worker.ReviewError): current.review(self.evidence,self.pack)
+        self.assertEqual(model.call_count,2)
     def test_unsupported_market_not_silently_certified(self):
         import knowledge_update as knowledge
         self.evidence['source']='Country — Serbia'

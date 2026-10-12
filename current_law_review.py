@@ -110,6 +110,13 @@ def policy_examples(source,pack,allow_uncertified=False):
             return rendered
         return {'supported':False,'reason':'Existing generator has no certified rule coverage for this market'}
 
+def exact_segment_result(result, text):
+    return (result.get('reviewed_entire_chunk') is True and bool(result.get('reason'))
+            and isinstance(result.get('findings'), list)
+            and all(isinstance(f.get('quote'), str) and bool(f['quote'])
+                    and f['quote'] in text for f in result['findings']))
+
+
 def review(evidence,pack):
     import codex_review_worker as w
     body=evidence['after']
@@ -143,6 +150,17 @@ def review(evidence,pack):
                     'Identify existing-rule gaps and uncertain status; never invent a historical comparison.\n'+
                     json.dumps({'source':evidence['source'],'chunk':part,'current_rulepack':pack},ensure_ascii=False),
                         chunk_schema(),f'current_chunk_{round_number}_{index}')
+                if not exact_segment_result(result, part['text']):
+                    # Keep rejected output for diagnosis; never turn an invalid
+                    # quote into a fuzzy match or a successful checkpoint.
+                    write_json(checkpoint.with_suffix('.rejected.json'),{'id':segment_key,'result':result})
+                    w.record('reviewing',source=evidence['source'],operation='分段引用核验失败；仅纠正一次，仍须精确匹配')
+                    result=w.codex_json('The preceding segment review failed exact quotation validation. '
+                        'Review EVERY character again. Copy each quote VERBATIM from this chunk, without '
+                        'translation, ellipses, whitespace changes or text from another segment. '
+                        'Do not approve the whole statute. Record all relevant B2C requirements and uncertainties.\n'+
+                        json.dumps({'source':evidence['source'],'chunk':part,'current_rulepack':pack},ensure_ascii=False),
+                        chunk_schema(),f'current_chunk_{round_number}_{index}_correction')
                 if result.get('reviewed_entire_chunk') is not True or not result.get('reason'):
                     raise w.ReviewError('分段审查不完整；未批准现行法')
                 if any(not f.get('quote') or f['quote'] not in part['text'] for f in result['findings']):
