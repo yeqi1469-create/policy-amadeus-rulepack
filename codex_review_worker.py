@@ -371,7 +371,10 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
     os.environ["POLICY_AMADEUS_EVIDENCE_DIR"] = str(evidence_dir)
     try:
         record("fetching_evidence", source=source, operation="获取当前官方正文", endpoint=url, operation_limit_seconds=90)
-        new_hash = knowledge._fingerprint(url)
+        # Review must have the same bounded transient-outage recovery as the
+        # source checker. One failed request is not proof of an unavailable
+        # official document. Retry only this configured representation first.
+        new_hash = knowledge._fingerprint_source((url,))[url]
         new_url = url
     except Exception:
         # Repair an unavailable/non-document portal with a configured official
@@ -384,7 +387,7 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
                 continue
             try:
                 record("fetching_evidence", source=source, operation="尝试当前官方备用入口", endpoint=alternative, operation_limit_seconds=90)
-                new_hash = knowledge._fingerprint(alternative)
+                new_hash = knowledge._fingerprint_source((alternative,))[alternative]
                 new_url = alternative
                 break
             except Exception:
