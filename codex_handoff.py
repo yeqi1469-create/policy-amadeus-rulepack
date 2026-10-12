@@ -56,7 +56,8 @@ def ticket_lock():
 
 
 def category(reason):
-    for phrase, code in (("不是已配置", "obsolete_endpoint"), ("不是该法规", "obsolete_endpoint"),
+    for phrase, code in (("超出单次自动审查", "large_document"),
+                         ("不是已配置", "obsolete_endpoint"), ("不是该法规", "obsolete_endpoint"),
                          ("新旧官方", "missing_historical_evidence"), ("双轮", "review_disagreement"),
                          ("当前官方", "current_source_unavailable"), ("ModuleNotFound", "runtime_dependency"),
                          ("额度", "account_or_quota"), ("签名", "publication_or_signature")):
@@ -66,6 +67,7 @@ def category(reason):
 
 
 REASONS = {"obsolete_endpoint": "待审旧入口与当前官方来源配置不匹配",
+           "large_document": "官方正文已取得，但超出单次自动审查容量；需要分段核验",
            "missing_historical_evidence": "缺少可靠的旧正文或同法规历史快照",
            "review_disagreement": "双轮审查未形成可批准结论",
            "current_source_unavailable": "当前官方正文和备用表示暂不可用",
@@ -200,6 +202,23 @@ def note(ids, owner, action):
         write_json(folder()/"codex_repair_requests.json", queue)
 
 
+def await_evidence(ids, owner, action):
+    """A finished investigation is not a finished repair or an active agent."""
+    if owner != settings().get("target_thread_id"):
+        raise ValueError("Repair owner does not match the authorized chat")
+    with ticket_lock():
+        queue = read("codex_repair_requests.json")
+        for key in ids:
+            ticket = queue["requests"][key]
+            if ticket.get("owner_thread_id") != owner:
+                raise ValueError("Claim the repair before recording an evidence wait")
+            if ticket.get("state") != "resolved":
+                ticket.update(state="awaiting_evidence", lease_until=0, action=str(action)[:240],
+                              action_at=datetime.now(timezone.utc).isoformat())
+        write_json(folder()/"codex_repair_requests.json", queue)
+    return summary()
+
+
 def reconcile(status=None):
     """Close only evidence-backed findings; never clear the detection baseline."""
     if not settings().get("enabled"):
@@ -234,7 +253,7 @@ def defer_source(source):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("inspect", "claim", "note", "reconcile", "dispatch"))
+    parser.add_argument("command", choices=("inspect", "claim", "note", "await-evidence", "reconcile", "dispatch"))
     parser.add_argument("--ids", nargs="+", default=[])
     parser.add_argument("--owner", default="")
     parser.add_argument("--action", default="")
@@ -243,6 +262,8 @@ def main():
         claim(args.ids, args.owner)
     elif args.command == "note":
         note(args.ids, args.owner, args.action)
+    elif args.command == "await-evidence":
+        await_evidence(args.ids, args.owner, args.action)
     elif args.command == "reconcile":
         reconcile()
     elif args.command == "dispatch":

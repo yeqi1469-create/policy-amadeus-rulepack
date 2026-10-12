@@ -66,6 +66,28 @@ class HandoffTests(unittest.TestCase):
         self.assertTrue(bridge.defer_source(self.source))
         self.assertEqual(bridge.read("codex_repair_requests.json")["requests"][ids[0]]["state"], "processing")
 
+    def test_evidence_wait_is_not_active_processing_or_resolution(self):
+        bridge.submit(self.failure)
+        ids = list(bridge.read("codex_repair_requests.json")["requests"])
+        bridge.claim(ids, self.owner)
+        bridge.await_evidence(ids, self.owner, "已调查；待补官方历史正文")
+        self.assertEqual(bridge.summary()["processing"], 0)
+        self.assertEqual(bridge.summary()["pending"], 1)
+        self.assertFalse(bridge.defer_source(self.source))
+        text = update_detail_text({}, requests=bridge.read("codex_repair_requests.json")["requests"].values())
+        self.assertIn("待补足官方证据", text)
+        self.assertNotIn("当前聊天处理中", text)
+
+    def test_verified_large_snapshot_not_misreported_as_missing(self):
+        body = "Applicable official consumer-law body. " * 10000
+        digest = hashlib.sha256(body.encode()).hexdigest()
+        write_json(worker.folder()/"codex_review/evidence"/(digest+".json"), {"url":self.url,"normalized_text":body})
+        with patch.object(worker, "_http_json") as remote:
+            with self.assertRaisesRegex(worker.EvidenceTooLarge, "正文已取得"):
+                worker.prior_document(digest, self.url)
+        remote.assert_not_called()
+        self.assertEqual(bridge.category("官方正文已取得，超出单次自动审查容量"), "large_document")
+
     def test_ticket_does_not_close_when_report_or_approval_missing(self):
         bridge.submit(self.failure)
         pack = {"rulepack_version": "fixture", "reviewed_source_fingerprints": {}}

@@ -37,6 +37,10 @@ class ReviewError(RuntimeError):
     pass
 
 
+class EvidenceTooLarge(ReviewError):
+    pass
+
+
 def failure_details(exc: Exception) -> dict:
     """Diagnostics without exception payloads, credentials or source text."""
     result = {"failure_type": type(exc).__name__}
@@ -243,7 +247,7 @@ def _verify_document(doc: dict, expected: str, url: str) -> str:
     if hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest() != expected:
         raise ReviewError("官方正文证据与指纹不匹配")
     if len(text) > 350_000:
-        raise ReviewError("官方正文过大；须拆分审查，未截断或批准")
+        raise EvidenceTooLarge(f"官方正文已取得（{len(text)} 字符），超出单次自动审查容量；需要分段核验，未截断或批准")
     return text
 
 
@@ -256,11 +260,12 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
         record("fetching_evidence", source=source, operation="恢复旧正文快照", endpoint=url, operation_limit_seconds=90)
         before_doc = prior_document(old_hash, url)
         before = _verify_document(before_doc, old_hash, url)
-    except Exception:
+    except Exception as original_error:
         # Only configured official representations from this same source.
         # State explicitly that this is a representation comparison, not a
         # recovered exact old portal page. The model must verify equivalence.
         before = ""
+        oversized = original_error if isinstance(original_error, EvidenceTooLarge) else None
         candidates = sorted((alternatives or {}).items(),
                             key=lambda item: ("/TXT/HTML/" not in item[0], "/TXT/XML/" in item[0]))
         for candidate_url, candidate_hash in candidates:
@@ -275,9 +280,14 @@ def prepare_evidence(source: str, url: str, old_hash: str, alternatives: dict | 
                 before = candidate_text
                 old_url, old_hash = candidate_url, candidate_hash
                 break
+            except EvidenceTooLarge as exc:
+                oversized = exc
+                continue
             except Exception:
                 continue
         if not before:
+            if oversized is not None:
+                raise oversized
             raise ReviewError("新旧官方正文或同一法规备用存档不可用；保留待办并重试") from None
     evidence_dir = folder() / "codex_review" / "evidence"
     previous = os.environ.get("POLICY_AMADEUS_EVIDENCE_DIR")
@@ -324,6 +334,8 @@ def prior_document(expected, url):
             doc = json.loads((directory/(expected+".json")).read_text(encoding="utf-8"))
             _verify_document(doc, expected, url)
             return doc
+        except EvidenceTooLarge:
+            raise
         except (OSError, ValueError, ReviewError):
             continue
     return _http_json(RAW+"/main/automation_state/evidence/"+expected+".json")

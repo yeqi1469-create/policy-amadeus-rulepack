@@ -126,7 +126,7 @@ def update_detail_text(status, events=(), requests=(), now=None):
     for item in requests:
         if item.get("state") != "resolved":
             states = {"pending":"等待本聊天接手" if item.get("queue_accepted") else "尚未成功发送",
-                      "processing":"当前聊天处理中", "resolved":"已复核解决"}
+                      "processing":"当前聊天处理中", "awaiting_evidence":"调查已记录，待补足官方证据或分段复核", "resolved":"已复核解决"}
             lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；{states.get(item.get('state'),'状态待确认')}")
     lines.extend(("", "最近实际步骤（北京时间）："))
     for event in list(events)[-20:]:
