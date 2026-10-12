@@ -10,6 +10,8 @@ $ErrorActionPreference = 'Stop'
 $backup = "$Target.backup"
 $deadline = (Get-Date).AddHours(12)
 $replacementStarted = $false
+$installMutex = $null
+$mutexHeld = $false
 function Get-UpdateHash([string]$Path) {
     $inputStream = [System.IO.File]::OpenRead($Path)
     $algorithm = [System.Security.Cryptography.SHA256]::Create()
@@ -28,6 +30,26 @@ try {
         Start-Sleep -Seconds 10
     }
     if ($running) { throw 'Application is still running; retry on the next update check' }
+    # Serialize replacement for this exact target, not the whole computer.
+    $targetBytes = [System.Text.Encoding]::UTF8.GetBytes([System.IO.Path]::GetFullPath($Target).ToLowerInvariant())
+    $nameHasher = [System.Security.Cryptography.SHA256]::Create()
+    try { $mutexName = 'Local\PolicyAmadeusInstall-' + [System.BitConverter]::ToString($nameHasher.ComputeHash($targetBytes)).Replace('-', '') }
+    finally { $nameHasher.Dispose() }
+    $installMutex = New-Object System.Threading.Mutex($false, $mutexName)
+    $mutexHeld = $installMutex.WaitOne(60000)
+    if (-not $mutexHeld) { throw 'Another installer is replacing this application; retry later' }
+    $pendingSelection = Join-Path (Split-Path -Parent $StatusFile) 'pending_app_update.json'
+    if (Test-Path -LiteralPath $pendingSelection) {
+        $selection = Get-Content -LiteralPath $pendingSelection -Raw | ConvertFrom-Json
+        $selectionAlive = $selection.helper_pid -and (Get-Process -Id $selection.helper_pid -ErrorAction SilentlyContinue)
+        if ($selectionAlive -and $selection.sha256 -ne $ExpectedHash -and (Test-Path -LiteralPath $selection.staged)) {
+            # A newer, verified download has its own live installer. This old
+            # helper must never race it or downgrade the executable.
+            @{ state = 'superseded'; checked_at = (Get-Date).ToString('o') } |
+                ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
+            return
+        }
+    }
     if (-not (Test-Path -LiteralPath $Staged)) { throw 'Staged application is missing' }
     if ((Get-UpdateHash $Staged) -ne $ExpectedHash) {
         throw 'Staged application hash does not match the signed manifest'
@@ -48,5 +70,7 @@ try {
     @{ state = 'failed'; error = $_.Exception.Message; checked_at = (Get-Date).ToString('o') } |
         ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
 } finally {
+    if ($mutexHeld) { $installMutex.ReleaseMutex() }
+    if ($installMutex) { $installMutex.Dispose() }
     Remove-Item -LiteralPath $Staged -Force -ErrorAction SilentlyContinue
 }
