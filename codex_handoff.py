@@ -24,7 +24,7 @@ def folder():
 
 def read(name, default=None):
     try:
-        return json.loads((folder()/name).read_text(encoding="utf-8"))
+        return json.loads((folder()/name).read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
         return {} if default is None else default
 
@@ -119,8 +119,17 @@ def summary():
     active = [item for item in tickets if item.get("state") != "resolved"]
     processing = [item for item in active if item.get("state") == "processing" and item.get("lease_until", 0) > time.time()]
     accepted = [item for item in active if item.get("queue_accepted")]
-    return {"state": "processing" if processing else "awaiting_chat" if accepted else "queued" if active else "idle",
+    evidence = [item for item in active if item.get("state") == "awaiting_evidence" and item.get("waiting_for") != "installation"]
+    installation = [item for item in active if item.get("state") == "awaiting_evidence" and item.get("waiting_for") == "installation"]
+    unclaimed = [item for item in accepted if item.get("state") not in ("awaiting_evidence", "resolved")]
+    undelivered = [item for item in active if not item.get("queue_accepted") and item.get("state") != "awaiting_evidence"]
+    state = ("processing" if processing else "queued" if undelivered else
+             "awaiting_chat" if unclaimed else "awaiting_verification" if evidence and installation else
+             "awaiting_install" if installation else "awaiting_evidence" if evidence else "idle")
+    return {"state": state,
             "pending": len(active), "processing": len(processing),
+            "awaiting_evidence":len(evidence), "awaiting_install":len(installation),
+            "countries_pending":len({item["source"] for item in active if not item["source"].startswith("__")}),
             "accepted": len(accepted), "delivery_failed": any(item.get("delivery_error") for item in active),
             "target_thread_id": config["target_thread_id"]}
 
@@ -133,7 +142,7 @@ def dispatch():
     with ticket_lock():
         queue = read("codex_repair_requests.json")
         selected = [item for item in queue.get("requests", {}).values()
-                    if item.get("state") != "resolved" and not item.get("queue_accepted")
+                    if item.get("state") not in ("resolved", "awaiting_evidence") and not item.get("queue_accepted")
                     and item.get("delivery_retry_after", 0) <= time.time()
                     and not (item.get("state") == "processing" and item.get("lease_until", 0) > time.time())]
         ids = [item["id"] for item in selected]
@@ -202,10 +211,12 @@ def note(ids, owner, action):
         write_json(folder()/"codex_repair_requests.json", queue)
 
 
-def await_evidence(ids, owner, action):
+def await_evidence(ids, owner, action, waiting_for="official_evidence"):
     """A finished investigation is not a finished repair or an active agent."""
     if owner != settings().get("target_thread_id"):
         raise ValueError("Repair owner does not match the authorized chat")
+    if waiting_for not in ("official_evidence", "installation"):
+        raise ValueError("Unknown verification wait")
     with ticket_lock():
         queue = read("codex_repair_requests.json")
         for key in ids:
@@ -213,7 +224,7 @@ def await_evidence(ids, owner, action):
             if ticket.get("owner_thread_id") != owner:
                 raise ValueError("Claim the repair before recording an evidence wait")
             if ticket.get("state") != "resolved":
-                ticket.update(state="awaiting_evidence", lease_until=0, action=str(action)[:240],
+                ticket.update(state="awaiting_evidence", waiting_for=waiting_for, lease_until=0, action=str(action)[:240],
                               action_at=datetime.now(timezone.utc).isoformat())
         write_json(folder()/"codex_repair_requests.json", queue)
     return summary()
@@ -257,13 +268,14 @@ def main():
     parser.add_argument("--ids", nargs="+", default=[])
     parser.add_argument("--owner", default="")
     parser.add_argument("--action", default="")
+    parser.add_argument("--waiting-for", choices=("official_evidence", "installation"), default="official_evidence")
     args = parser.parse_args()
     if args.command == "claim":
         claim(args.ids, args.owner)
     elif args.command == "note":
         note(args.ids, args.owner, args.action)
     elif args.command == "await-evidence":
-        await_evidence(args.ids, args.owner, args.action)
+        await_evidence(args.ids, args.owner, args.action, args.waiting_for)
     elif args.command == "reconcile":
         reconcile()
     elif args.command == "dispatch":

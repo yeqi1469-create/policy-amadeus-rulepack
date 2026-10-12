@@ -50,6 +50,27 @@ def installed_version() -> str:
     return str(json.loads(_resource("app_version.json").read_text(encoding="utf-8"))["version"])
 
 
+def read_app_update_status() -> dict:
+    """Local presentation only: no download, network, model call or hashing loop."""
+    try:
+        current = installed_version()
+    except (OSError, ValueError, KeyError):
+        return {"app":"unknown"}
+    result = {"app":"current", "installed_version":current}
+    try:
+        pending = json.loads((_data_dir()/"pending_app_update.json").read_text(encoding="utf-8-sig"))
+        if version_key(pending["version"]) > version_key(current):
+            if Path(pending["staged"]).is_file():
+                return {**result,"app":"waiting_for_app_exit" if _helper_alive(int(pending.get("helper_pid",0))) else "installer_inactive",
+                        "new_version":pending["version"]}
+            status = json.loads((_data_dir()/"app_install_status.json").read_text(encoding="utf-8-sig"))
+            return {**result,"app":"restart_needed" if status.get("state")=="installed" else "installation_failed",
+                    "new_version":pending["version"]}
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return result
+
+
 def _signed_fields(version: str, download_url: str, sha256: str) -> bytes:
     return json.dumps(
         {"download_url": download_url, "sha256": sha256, "version": version},

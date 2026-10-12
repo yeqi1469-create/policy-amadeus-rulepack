@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from policy_studio import PolicyStudio
+from policy_studio import PolicyStudio, license_information_rows, LICENSE_LABELS
 
 
 class IndependentLicenseTests(unittest.TestCase):
@@ -17,7 +17,7 @@ class IndependentLicenseTests(unittest.TestCase):
              patch("policy_studio.get_status", side_effect=AssertionError("update dependency")):
             PolicyStudio._extract_license_worker(app, "synthetic.pdf")
         extract.assert_called_once_with("synthetic.pdf")
-        self.assertEqual(app._license_queue.get_nowait(), ("ok", fields))
+        self.assertEqual(app._license_queue.get_nowait(), ("ok", (fields, "synthetic.pdf")))
 
     def test_failed_worker_returns_safe_error_and_no_fields(self):
         app = Mock(_license_queue=queue.Queue())
@@ -46,7 +46,7 @@ class IndependentLicenseTests(unittest.TestCase):
                 for step in range(3):
                     app.show_step(step)
                     self.assertEqual(str(app._license_button["state"]), "normal")
-                app._license_queue.put(("ok", {"legal_name": "Synthetic Example Ltd", "registration_number": "12345678"}))
+                app._license_queue.put(("ok", ({"legal_name": "Synthetic Example Ltd", "registration_number": "12345678"}, "synthetic.pdf")))
                 app._license_busy = True
                 app._poll_license()
                 app._license_window.withdraw()
@@ -62,9 +62,59 @@ class IndependentLicenseTests(unittest.TestCase):
                 self.assertEqual(app.policies, [])
                 self.assertEqual(app.settings, {})
                 self.assertEqual(app.step, 2)
+                self.assertEqual(len(app._license_fields_form.grid_slaves()), len(LICENSE_LABELS))
+                self.assertEqual({int(item.grid_info()["column"]) for item in app._license_fields_form.grid_slaves()}, {0,1})
                 app._show_license_fields({})
                 app._license_window.withdraw()
                 self.assertNotIn("Synthetic Example Ltd", "".join(texts(app._license_window)))
+            finally:
+                app.destroy()
+
+    def test_licence_rows_are_identical_for_both_result_views(self):
+        rows=license_information_rows({"legal_name":"Synthetic Example Ltd","street_address":"Long sample address"})
+        self.assertEqual(len(rows),16)
+        self.assertIn(("执照 · 法定名称","Synthetic Example Ltd"),rows)
+        self.assertIn(("执照 · VAT ID（仅执照明确记载时）","未识别（请对照执照手动确认）"),rows)
+
+    def test_result_filename_tracks_parsed_file_not_later_selection(self):
+        with patch("policy_studio.start_startup_check"), patch.object(PolicyStudio,"_load_config"), \
+             patch.object(PolicyStudio,"_set_card_transparency"),patch.object(PolicyStudio,"_apply_windows_icons"):
+            app=PolicyStudio()
+            app.withdraw()
+            try:
+                app.pdf_path.set("later-selection.pdf")
+                app._license_queue.put(("ok",({"legal_name":"Synthetic Example Ltd"},"actually-parsed.pdf")))
+                app._poll_license()
+                app._license_window.withdraw()
+                labels=[item.cget("text") for item in app._license_window.winfo_children() if item.winfo_class()=="Label"]
+                self.assertIn("文件：actually-parsed.pdf",labels)
+                self.assertNotIn("文件：later-selection.pdf",labels)
+            finally:
+                app.destroy()
+
+    def test_long_field_copy_is_complete_and_small_window_can_scroll(self):
+        with patch("policy_studio.start_startup_check"),patch.object(PolicyStudio,"_load_config"), \
+             patch.object(PolicyStudio,"_set_card_transparency"),patch.object(PolicyStudio,"_apply_windows_icons"):
+            app=PolicyStudio()
+            app.withdraw()
+            try:
+                address="Synthetic Long Address, "*90
+                app._show_license_fields({"legal_name":"Synthetic Example Ltd","street_address":address},"synthetic.pdf")
+                app._license_window.geometry("660x440")
+                app._license_window.update_idletasks()
+                app._license_window.withdraw()
+                box=app._license_fields_form.grid_slaves(row=4,column=0)[0]
+                text=next(item for item in box.winfo_children() if item.winfo_class()=="Text")
+                self.assertEqual(text.get("1.0","end-1c"),address.strip())
+                self.assertLessEqual(int(text["height"]),8)
+                heading=next(item for item in box.winfo_children() if item.winfo_class()=="Frame")
+                button=next(item for item in heading.winfo_children() if item.winfo_class()=="Button")
+                with patch.object(app,"clipboard_clear"),patch.object(app,"clipboard_append") as copy:
+                    button.invoke()
+                    copy.assert_called_once_with(address.strip())
+                self.assertLess(app._license_result_scroll.yview()[1],1)
+                app._license_result_scroll.yview_moveto(1)
+                self.assertEqual(app._license_result_scroll.yview()[1],1)
             finally:
                 app.destroy()
 

@@ -86,6 +86,47 @@ class HandoffTests(unittest.TestCase):
         text = update_detail_text({}, requests=bridge.read("codex_repair_requests.json")["requests"].values())
         self.assertIn("待补足官方证据", text)
         self.assertNotIn("当前聊天处理中", text)
+        self.assertEqual(bridge.summary()["state"],"awaiting_evidence")
+
+    def test_accepted_evidence_wait_never_says_waiting_to_be_claimed(self):
+        bridge.submit(self.failure)
+        ids=list(bridge.read("codex_repair_requests.json")["requests"])
+        with patch.object(worker,"locate_codex",return_value=Path("synthetic.exe")),patch("subprocess.run",return_value=Mock(returncode=0)):
+            bridge.dispatch()
+        bridge.claim(ids,self.owner)
+        bridge.await_evidence(ids,self.owner,"已调查，待补证")
+        caption=activity_caption({"update_status":{"state":"retry_pending","handoff":bridge.summary()}})
+        self.assertIn("已调查",caption)
+        self.assertNotIn("等待接手",caption)
+
+    def test_install_wait_is_not_claimed_legal_verification(self):
+        bridge.submit(self.failure)
+        ids=list(bridge.read("codex_repair_requests.json")["requests"])
+        with patch.object(worker,"locate_codex",return_value=Path("synthetic.exe")),patch("subprocess.run",return_value=Mock(returncode=0)):
+            bridge.dispatch()
+        bridge.claim(ids,self.owner)
+        bridge.await_evidence(ids,self.owner,"暂存新版，尚未安装",waiting_for="installation")
+        self.assertEqual(bridge.summary()["state"],"awaiting_install")
+        self.assertEqual(bridge.summary()["pending"],1)
+        self.assertIn("等待安装",update_detail_text({},requests=bridge.read("codex_repair_requests.json")["requests"].values()))
+
+    def test_mixed_install_and_law_waits_are_not_waiting_for_chat(self):
+        bridge.submit({**self.failure,"failure_source":"__worker__","failure_type":"ReadTimeout"})
+        tickets=bridge.read("codex_repair_requests.json")["requests"]
+        with patch.object(worker,"locate_codex",return_value=Path("synthetic.exe")),patch("subprocess.run",return_value=Mock(returncode=0)):
+            bridge.dispatch()
+        bridge.claim(list(tickets),self.owner)
+        for key,ticket in tickets.items():
+            bridge.await_evidence([key],self.owner,"已处理，待复核",waiting_for="installation" if ticket["source"]=="__worker__" else "official_evidence")
+        summary=bridge.summary()
+        self.assertEqual(summary["state"],"awaiting_verification")
+        self.assertEqual(summary["countries_pending"],1)
+        self.assertEqual(summary["pending"],2)
+
+    def test_windows_bom_status_is_read_without_suppressing_install_result(self):
+        path=bridge.folder()/"app_install_status.json"
+        path.write_text(json.dumps({"state":"installed"}),encoding="utf-8-sig")
+        self.assertEqual(bridge.read("app_install_status.json")["state"],"installed")
 
     def test_verified_large_snapshot_not_misreported_as_missing(self):
         body = "Applicable official consumer-law body. " * 10000

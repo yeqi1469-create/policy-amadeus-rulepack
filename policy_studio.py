@@ -12,7 +12,7 @@ from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 from knowledge_update import get_status, start_startup_check
-from update_progress import progress_caption, activity_caption, update_detail_text
+from update_progress import progress_caption, activity_caption, update_detail_text, app_update_caption
 from policy_generator import extract_license_data, extract_license_fields, generate_translated_bundle
 
 
@@ -91,6 +91,11 @@ LICENSE_LABELS = (
 )
 
 
+def license_information_rows(fields):
+    return [(f"执照 · {label}", str(fields.get(key, "")).strip() or "未识别（请对照执照手动确认）")
+            for label, key in LICENSE_LABELS]
+
+
 def resource_path(name: str) -> Path:
     return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / name
 
@@ -157,6 +162,17 @@ class PolicyStudio(tk.Tk):
         self.after(30, self._render_background)
         self.show_step(0)
 
+    def destroy(self) -> None:
+        if getattr(self,"_destroying",False):
+            return
+        self._destroying=True
+        try:
+            for job in self.tk.call("after","info"):
+                self.after_cancel(job)
+        except tk.TclError:
+            pass
+        super().destroy()
+
     def _config_path(self) -> Path:
         base = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
         return base / "policy_studio_config.json"
@@ -187,7 +203,9 @@ class PolicyStudio(tk.Tk):
             self.country_display.set("、".join(MARKET_NAMES_CN.get(name, name) for name in selected))
 
     def _poll_knowledge_check(self) -> None:
-        status = get_status()
+        from app_updater import read_app_update_status
+        status = {**get_status(), "app_update_status":read_app_update_status()}
+        self.software_status.set(app_update_caption(status["app_update_status"]))
         self.knowledge_status.set(str(status.get("message", "正在检查政策知识库更新……")))
         self.progress_status = status
         self._update_progress()
@@ -220,6 +238,9 @@ class PolicyStudio(tk.Tk):
             bg="#343b47", fg=WHITE, activebackground=ORANGE, activeforeground=WHITE,
             relief="flat", font=("Microsoft YaHei UI", 9), padx=8, pady=5)
         self._license_button.pack(side="right")
+        self.software_status = tk.StringVar(value="正在读取程序版本与安装状态")
+        tk.Label(header, textvariable=self.software_status, bg=PANEL, fg=MUTED, wraplength=530,
+                 justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(3,0))
         tk.Label(header, text="三步完成店铺基础资料设置", bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 10)).pack(anchor="w", pady=(5, 0))
         tk.Label(header, textvariable=self.knowledge_status, bg=PANEL, fg=ORANGE,
                  wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
@@ -654,9 +675,7 @@ class PolicyStudio(tk.Tk):
         markets = self.settings.get("markets") or [self.settings]
         extracted = []
         licence_fields = self.settings.get("license_fields") or markets[0].get("license_fields", {})
-        for label, key in LICENSE_LABELS:
-            value = str(licence_fields.get(key, "")).strip()
-            extracted.append((f"执照 · {label}", value or "未识别（请对照执照手动确认）"))
+        extracted.extend(license_information_rows(licence_fields))
         def country_names(items) -> str:
             return compact_market_scope(markets, items)
 
@@ -701,36 +720,69 @@ class PolicyStudio(tk.Tk):
         add_grouped("AI辅助审阅", lambda m: f"{m.get('ai_audit_status', '未启用')}\n" + ("\n".join(str(x) for x in m.get("ai_audit_findings", [])) or "无额外发现"))
         add_grouped("官方核验状态", lambda m: f"{m['coverage_status']}；核验日期：{m['verified_on']}")
         add_grouped("官方依据", lambda m: "\n".join(str(item) for item in m["official_sources"]))
-        for index, (name, value) in enumerate(extracted):
-            row, column = divmod(index, 2)
-            box = tk.Frame(form, bg="#1d2430", padx=7, pady=4)
-            box.grid(row=row, column=column, sticky="nsew", padx=3, pady=3)
-            heading = tk.Frame(box, bg="#1d2430")
-            heading.pack(fill="x")
-            tk.Label(heading, text=name, bg="#1d2430", fg=ORANGE,
-                     font=("Microsoft YaHei UI", 8, "bold")).pack(side="left")
-
-            def copy_field(v=value, n=name) -> None:
-                self.clipboard_clear(); self.clipboard_append(v); self.update()
-                self.copy_status.set(f"已复制：{n}")
-
-            tk.Button(heading, text="复制", command=copy_field, bg="#343b47", fg=WHITE,
-                      activebackground=ORANGE, activeforeground=WHITE, relief="flat",
-                      padx=5, pady=0, font=("Microsoft YaHei UI", 7)).pack(side="right")
-            line_count = max(1, min(5, value.count("\n") + (len(value) // 48) + 1))
-            text_box = tk.Text(box, height=line_count, bg="#1d2430", fg=WHITE,
-                               selectbackground=ORANGE, selectforeground=WHITE, relief="flat",
-                               wrap="word", font=("Microsoft YaHei UI", 8), padx=0, pady=1)
-            text_box.insert("1.0", value)
-            text_box.configure(state="disabled")
-            text_box.pack(fill="x", pady=(1, 0))
-        form.grid_columnconfigure(0, weight=1, uniform="result")
-        form.grid_columnconfigure(1, weight=1, uniform="result")
+        self._render_information_fields(form, extracted, self.copy_status, scroll_canvas)
 
         tk.Label(body, textvariable=self.copy_status, bg=PANEL, fg=MUTED,
                  font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(2, 0))
         self._button(self.footer, "重新编辑", lambda: self.show_step(0)).pack(side="left")
         self._button(self.footer, "关闭", self.destroy).pack(side="right")
+
+    def _render_information_fields(self, form, rows, notice, viewport) -> None:
+        """Both licence-only and policy-result views share one field renderer."""
+        for index, (name, value) in enumerate(rows):
+            row, column = divmod(index, 2)
+            box = tk.Frame(form, bg="#1d2430", padx=7, pady=4)
+            box.grid(row=row, column=column, sticky="nsew", padx=3, pady=3)
+            heading = tk.Frame(box, bg="#1d2430")
+            heading.pack(fill="x")
+            def copy_field(v=value, n=name) -> None:
+                self.clipboard_clear(); self.clipboard_append(v)
+                notice.set(f"已复制：{n}")
+
+            copy_button = tk.Button(heading, text="复制", command=copy_field, bg="#343b47", fg=WHITE,
+                      activebackground=ORANGE, activeforeground=WHITE, relief="flat",
+                      padx=5, pady=0, font=("Microsoft YaHei UI", 8))
+            copy_button.pack(side="right", anchor="n", padx=(5,0))
+            title = tk.Label(heading, text=name, bg="#1d2430", fg=ORANGE, anchor="w", justify="left",
+                            font=("Microsoft YaHei UI", 8, "bold"))
+            title.pack(side="left", fill="x", expand=True)
+            heading.bind("<Configure>", lambda e, label=title, button=copy_button:
+                         label.configure(wraplength=max(80,e.width-button.winfo_width()-12)))
+            line_count = max(2, min(8, value.count("\n") + (len(value) // 40) + 1))
+            text_box = tk.Text(box, height=line_count, bg="#1d2430", fg=WHITE,
+                               selectbackground=ORANGE, selectforeground=WHITE, relief="flat",
+                               wrap="word", font=("Microsoft YaHei UI", 9), padx=0, pady=1)
+            text_box.insert("1.0", value)
+            text_box.configure(state="disabled")
+            text_box.pack(fill="x", pady=(1, 0))
+            def fit_lines(event, field=text_box):
+                if getattr(field,"_fitted_width",None)==event.width:
+                    return
+                field._fitted_width=event.width
+                old_job=getattr(field,"_fit_job",None)
+                if old_job:
+                    field.after_cancel(old_job)
+                def fit():
+                    field._fit_job=None
+                    if field.winfo_exists():
+                        measured=field.count("1.0","end-1c","displaylines")
+                        field.configure(height=max(2,min(8,(measured[0] if measured else 0)+1)))
+                field._fit_job=field.after_idle(fit)
+            text_box.bind("<Configure>", fit_lines)
+            def cancel_fit(_event, field=text_box):
+                job=getattr(field,"_fit_job",None)
+                if job:
+                    field.after_cancel(job)
+                    field._fit_job=None
+            text_box.bind("<Destroy>",cancel_fit)
+            def wheel(event, field=text_box, canvas=viewport):
+                low, high=field.yview()
+                target=field if high-low<0.999 else canvas
+                target.yview_scroll(-1 if event.delta>0 else 1,"units")
+                return "break"
+            text_box.bind("<MouseWheel>",wheel)
+        form.grid_columnconfigure(0, weight=1, uniform="result")
+        form.grid_columnconfigure(1, weight=1, uniform="result")
 
     def _scroll_result(self, event) -> None:
         canvas = self._result_scroll_canvas
@@ -800,7 +852,7 @@ class PolicyStudio(tk.Tk):
     def _extract_license_worker(self, path: str) -> None:
         # No Tk calls, policy gate, online translation or update-cache writes.
         try:
-            self._license_queue.put(("ok", extract_license_fields(path)))
+            self._license_queue.put(("ok", (extract_license_fields(path), path)))
         except Exception:
             self._license_queue.put(("error", "无法读取此 PDF，请确认文件可正常打开且未被加密。"))
 
@@ -815,17 +867,18 @@ class PolicyStudio(tk.Tk):
         if state == "error":
             self._app_dialog("执照提取失败", payload)
             return
-        self._show_license_fields(payload)
+        fields, source_path = payload
+        self._show_license_fields(fields, source_path)
 
-    def _show_license_fields(self, fields: dict[str, str]) -> None:
+    def _show_license_fields(self, fields: dict[str, str], source_path: str | None = None) -> None:
         previous = getattr(self, "_license_window", None)
         if previous is not None and previous.winfo_exists():
             previous.destroy()
         window = self._license_window = tk.Toplevel(self)
         window.title("执照提取结果 · 不依赖政策更新")
         window.configure(bg=PANEL)
-        window.geometry("760x560")
-        window.minsize(620, 420)
+        window.geometry("820x600")
+        window.minsize(660, 440)
         tk.Label(window, text="执照信息", bg=PANEL, fg=WHITE,
                  font=("Microsoft YaHei UI", 16, "bold")).pack(anchor="w", padx=18, pady=(14, 6))
         has_identity = any(str(fields.get(key, "")).strip() for key in
@@ -834,16 +887,18 @@ class PolicyStudio(tk.Tk):
                     if has_identity else "未识别到主要公司资料。扫描件、加密 PDF 或不支持的文本格式可能无法识别；请对照原件。")
         tk.Label(window, text=guidance, bg=PANEL, fg=MUTED, wraplength=580, justify="left",
                  font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=18, pady=(0, 8))
+        tk.Label(window, text=f"文件：{Path(source_path or self.pdf_path.get()).name or '未选择文件'}", bg=PANEL, fg=MUTED,
+                 wraplength=580, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", padx=18, pady=(0,7))
         copy_notice = tk.StringVar(master=window, value="可逐项复制，或复制全部字段")
         footer = tk.Frame(window, bg=PANEL, padx=18, pady=10)
         footer.pack(side="bottom", fill="x")
-        rows = [(label, str(fields.get(key, "")).strip() or "未识别（请对照原件确认）")
-                for label, key in LICENSE_LABELS]
+        rows = license_information_rows(fields)
         def copy(value: str, label: str) -> None:
             self.clipboard_clear()
             self.clipboard_append(value)
             copy_notice.set(f"已复制：{label}")
         self._button(footer, "复制全部字段", lambda: copy("\n".join(f"{label}：{value}" for label, value in rows), "全部字段"), True).pack(side="left")
+        self._button(footer, "选择其他执照", self._extract_license).pack(side="left", padx=(8,0))
         self._button(footer, "关闭", window.destroy).pack(side="right")
         tk.Label(window, textvariable=copy_notice, bg=PANEL, fg=MUTED,
                  font=("Microsoft YaHei UI", 9)).pack(side="bottom", anchor="w", padx=18)
@@ -852,22 +907,19 @@ class PolicyStudio(tk.Tk):
         viewport.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         viewport.pack(fill="both", expand=True, padx=(18, 0))
+        def scroll_window(event):
+            viewport.yview_scroll(-1 if event.delta>0 else 1,"units")
+            return "break"
+        window.bind("<MouseWheel>", scroll_window)
         body = tk.Frame(viewport, bg=PANEL)
         item = viewport.create_window((0, 0), window=body, anchor="nw")
         viewport.bind("<Configure>", lambda event: viewport.itemconfigure(item, width=max(1, event.width)))
         body.bind("<Configure>", lambda _event: viewport.configure(scrollregion=viewport.bbox("all")))
-        for label, value in rows:
-            row = tk.Frame(body, bg=PANEL, pady=4)
-            row.pack(fill="x")
-            tk.Label(row, text=label, bg=PANEL, fg=ORANGE,
-                     font=("Microsoft YaHei UI", 9, "bold")).pack(anchor="w")
-            self._button(row, "复制", lambda v=value, n=label: copy(v, n)).pack(side="right", padx=(8, 10))
-            field = tk.Text(row, height=2, wrap="word", bg="#1d2430", fg=WHITE, relief="flat",
-                            font=("Microsoft YaHei UI", 10), selectbackground=ORANGE)
-            field.insert("1.0", value)
-            field.configure(state="disabled")
-            field.pack(fill="x")
-            field.bind("<MouseWheel>", lambda event: viewport.yview_scroll(-1 if event.delta > 0 else 1, "units"))
+        form = tk.Frame(body, bg="#171c24", padx=7, pady=3, highlightbackground="#313945", highlightthickness=1)
+        form.pack(fill="x", padx=(0,10))
+        self._license_fields_form = form
+        self._license_result_scroll = viewport
+        self._render_information_fields(form, rows, copy_notice, viewport)
 
     def _ask_for_phone(self) -> bool:
         value = self._app_dialog("请输入客服电话", "请输入所有政策中统一使用的客服电话：", self.phone.get())

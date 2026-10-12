@@ -31,6 +31,12 @@ def handoff_label(update):
     state = handoff.get("state")
     if state == "processing":
         return "当前聊天已接手处理"
+    if state == "awaiting_evidence":
+        return "当前聊天已调查，等待法律证据复核"
+    if state == "awaiting_install":
+        return "程序修复已暂存，等待安装与运行复核"
+    if state == "awaiting_verification":
+        return "已调查，等待程序安装与法律证据复核"
     if state == "awaiting_chat":
         return "修复请求已排入当前聊天，等待接手"
     if state == "queued":
@@ -42,6 +48,20 @@ def handoff_label(update):
     if state == "not_configured":
         return "按需聊天接入尚未配置"
     return "等待自动重试"
+
+
+def app_update_caption(result):
+    current, new = result.get("installed_version", "未知"), result.get("new_version", "")
+    state = result.get("app")
+    if state == "waiting_for_app_exit":
+        return f"当前程序 {current} · 修复版 {new} 已下载，等待窗口退出后自动安装"
+    if state == "installer_inactive":
+        return f"修复版 {new} 已下载，但安装助手未运行；等待自动重试"
+    if state == "restart_needed":
+        return f"修复版 {new} 已安装，当前窗口仍运行 {current}，重开后生效"
+    if state == "installation_failed":
+        return f"修复版 {new} 尚未安装成功；原程序 {current} 保留"
+    return f"当前程序 {current} · 程序版本与政策核验是两项独立状态"
 
 
 def activity_caption(status, now=None):
@@ -79,6 +99,11 @@ def check_progress(completed, total, elapsed):
 
 
 def progress_caption(status):
+    software = status.get("app_update_status", {})
+    if software.get("app") == "waiting_for_app_exit":
+        return "等待安装程序修复 · 时间取决于当前窗口何时退出"
+    if software.get("app") == "restart_needed":
+        return "程序修复已安装 · 重开窗口后生效"
     update = status.get("update_status")
     if update:
         percent = max(0, min(100, int(update.get("progress_percent", 0))))
@@ -109,6 +134,8 @@ def update_detail_text(status, events=(), requests=(), now=None):
              "当前操作："+str(update.get("operation", status.get("message", "等待检查"))),
              f"本轮处理位置：{update.get('source_index') or 0}/{update.get('source_total') or 0}",
              "说明：阶段百分比不是全部国家完成率；后台存活不等于有新结果。"]
+    if status.get("app_update_status"):
+        lines.extend(("", "程序安装："+app_update_caption(status["app_update_status"])))
     if update.get("endpoint"):
         lines.extend(("当前访问入口：", str(update["endpoint"])))
     if update.get("model_round"):
@@ -126,7 +153,7 @@ def update_detail_text(status, events=(), requests=(), now=None):
     for item in requests:
         if item.get("state") != "resolved":
             states = {"pending":"等待本聊天接手" if item.get("queue_accepted") else "尚未成功发送",
-                      "processing":"当前聊天处理中", "awaiting_evidence":"调查已记录，待补足官方证据或分段复核", "resolved":"已复核解决"}
+                      "processing":"当前聊天处理中", "awaiting_evidence":"等待安装与运行复核" if item.get("waiting_for")=="installation" else "调查已记录，待补足官方证据或分段复核", "resolved":"已复核解决"}
             lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；{states.get(item.get('state'),'状态待确认')}")
     lines.extend(("", "最近实际步骤（北京时间）："))
     for event in list(events)[-20:]:
