@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rulepack_version": "2026.10.05-2",
+  "rulepack_version": "2026.10.12-1",
   "verified_on": "2026-09-29",
   "review_due": "2027-03-29",
   "scope": "ordinary physical-goods B2C ecommerce",
@@ -23,6 +23,9 @@
     },
     "EU Consumer Rights Directive": {
       "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02011L0083-20260927": "dced9f392f49d2f08234176fdd91a9b9e5a787745c5c835c485546507eb95cf9"
+    },
+    "Country — Portugal": {
+      "https://files.diariodarepublica.pt/1s/2021/10/20200/0000400029.pdf": "a9b0ef7b8e79d02f9cf301f226c62e6aca8444e7b26b5c0be5fc828b12ea9a42"
     }
   },
   "source_detection_review": {
@@ -240,6 +243,22 @@
       ],
       "second_review_reason": "The supplied full old/current legal texts, including annexes, show no substantive change; differences are EUR-Lex presentation and navigation. The rulepack already records this 2026-09-27 consolidation, and no new applicable change requires a patch. Approval covers only the metadata-only classification and empty patches, not hash authenticity, equivalence to the actual historical portal response, or blanket rulepack compliance.",
       "reviewed_at": "2026-10-05T03:33:46.504124+00:00",
+      "method": "two_local_subscription_reviews_then_cloud_tests"
+    },
+    {
+      "id": "ca8899b6e2faa57a408ab540993e0fa88f573014884e7e1002c78dd228cb2b45",
+      "source": "Country — Portugal",
+      "url": "https://files.diariodarepublica.pt/1s/2021/10/20200/0000400029.pdf",
+      "sha256": "a9b0ef7b8e79d02f9cf301f226c62e6aca8444e7b26b5c0be5fc828b12ea9a42",
+      "classification": "metadata_only",
+      "reason": "The supplied full documents contain the same operative Decreto-Lei n.º 84/2021, applicable to physical-goods sales between professionals and consumers and effective from 1 January 2022. Differences concern spacing in statutory cross-references; no substantive provision, deadline or effective date changed. Portugal’s three-year guarantee is already reflected in the rulepack. All source URLs are identical, so no endpoint replacement is proposed. This classification does not approve the hash or establish blanket rulepack compliance.",
+      "quotes": [
+        "a) Aos contratos de compra e venda celebrados entre consumidores e profissionais, incluindo os contratos celebrados para o fornecimento de bens a fabricar ou a produzir;",
+        "1 — O profissional é responsável por qualquer falta de conformidade que se manifeste no prazo de três anos a contar da entrega do bem.",
+        "O presente decreto -lei entra em vigor no dia 1 de janeiro de 2022."
+      ],
+      "second_review_reason": "The supplied full old/current texts differ only in cross-reference spacing in Articles 33(4), 38(1) and 51(2). No operative right, obligation, deadline, scope or commencement provision changes. The existing Portugal overlay reflects Article 12(1)'s three-year liability period. No applicable substantive change requires a patch, so metadata_only and empty patches are supported. Approval is limited to this snapshot comparison; it does not authenticate the hashes, establish consolidated currentness or certify blanket rulepack compliance.",
+      "reviewed_at": "2026-10-12T02:15:03.667902+00:00",
       "method": "two_local_subscription_reviews_then_cloud_tests"
     }
   ]
