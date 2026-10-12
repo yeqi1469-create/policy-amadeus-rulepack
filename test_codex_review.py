@@ -14,6 +14,32 @@ from update_storage import write_json
 
 
 class CodexReviewTests(unittest.TestCase):
+    def test_detached_worker_uses_independent_frozen_runtime(self):
+        with patch.object(worker.sys, "frozen", True, create=True), patch("subprocess.Popen") as popen:
+            worker.spawn_review_process(["synthetic.exe", "--auto-review"], Path(self.temp.name)/"worker.log")
+        environment = popen.call_args.kwargs["env"]
+        self.assertEqual(environment["PYINSTALLER_RESET_ENVIRONMENT"], "1")
+        self.assertEqual(environment.get("LOCALAPPDATA"), self.temp.name)
+
+    def test_failure_diagnostics_do_not_include_exception_payload(self):
+        try:
+            raise ModuleNotFoundError("sensitive-token-must-not-appear", name="cryptography.example")
+        except ModuleNotFoundError as exc:
+            detail = worker.failure_details(exc)
+        self.assertEqual(detail["missing_module"], "cryptography.example")
+        self.assertTrue(detail["failure_frames"])
+        self.assertNotIn("sensitive-token-must-not-appear", json.dumps(detail))
+
+    def test_failure_retains_pending_and_records_missing_module(self):
+        self.enable()
+        report = {"changed": [self.source], "pending_source_fingerprints": {self.source: {self.url: "b"*64}}}
+        write_json(worker.folder()/"knowledge_coverage_latest.json", report)
+        with patch.object(worker, "_repository_session", side_effect=ModuleNotFoundError(name="synthetic_dependency")):
+            result = worker.run(retry_now=True)
+        self.assertEqual(result["state"], "retry_pending")
+        self.assertEqual(result["missing_module"], "synthetic_dependency")
+        self.assertEqual(json.loads((worker.folder()/"knowledge_coverage_latest.json").read_text(encoding="utf-8")), report)
+
     def test_bundled_git_found_when_desktop_path_has_no_git(self):
         home = Path(self.temp.name)/"user"
         bundled = home/".cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/cmd/git.exe"

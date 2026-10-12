@@ -35,6 +35,32 @@ class ReviewError(RuntimeError):
     pass
 
 
+def failure_details(exc: Exception) -> dict:
+    """Diagnostics without exception payloads, credentials or source text."""
+    result = {"failure_type": type(exc).__name__}
+    if isinstance(exc, ModuleNotFoundError) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", exc.name or ""):
+        result["missing_module"] = exc.name
+    frames = []
+    trace = exc.__traceback__
+    while trace is not None:
+        frames.append({"file": Path(trace.tb_frame.f_code.co_filename).name,
+                       "function": trace.tb_frame.f_code.co_name, "line": trace.tb_lineno})
+        trace = trace.tb_next
+    result["failure_frames"] = frames[-8:]
+    return result
+
+
+def spawn_review_process(command: list[str], log_path: Path):
+    # A scheduled launcher exits while review is still running. Without a
+    # fresh one-file environment, its bootloader deletes the worker's files.
+    environment = dict(os.environ)
+    if getattr(sys, "frozen", False):
+        environment["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    with log_path.open("ab") as log:
+        return subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
+            env=environment, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+
 def folder() -> Path:
     return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Policy Amadeus"
 
@@ -661,7 +687,7 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             if locals().get("source") and locals().get("evidence") is not None:
                 source_errors[source] = {"failed_at": time.time(), "reason": message}
             return record("retry_pending", message=message,
-                          failure_type=type(exc).__name__, source_errors=locals().get("source_errors", {}),
+                          **failure_details(exc), source_errors=locals().get("source_errors", {}),
                           proposal_id=locals().get("proposal_id"), commit=locals().get("commit"))
 
 
@@ -698,9 +724,7 @@ def launch_if_needed() -> None:
             command = [sys.executable, "--auto-review"]
         else:
             command = [sys.executable, str(Path(__file__).resolve()), "--run"]
-        with (folder()/"codex_review_worker.log").open("ab") as log:
-            subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        spawn_review_process(command, folder()/"codex_review_worker.log")
     except (OSError, ValueError):
         record("retry_pending", message="后台自动审查启动失败；定时任务将重试")
 

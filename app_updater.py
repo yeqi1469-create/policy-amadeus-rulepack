@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +18,22 @@ from rulepack_manager import _channel_config, version_key
 
 TASK_NAME = "Policy Amadeus Auto Update"
 MAX_EXE_BYTES = 150 * 1024 * 1024
+
+
+def _release_get(url: str, **kwargs):
+    """Bounded retries for transport failures, never for signatures or hashes."""
+    import requests
+    for attempt in range(3):
+        try:
+            response = requests.get(url, **kwargs)
+            if response.status_code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
+                return response
+            response.close()
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt == 2:
+                raise
+        time.sleep((1, 3)[attempt])
+    raise RuntimeError("Unreachable transport retry state")
 
 
 def _resource(name: str) -> Path:
@@ -67,7 +84,7 @@ def _download_verified(url: str, expected_hash: str) -> Path:
     try:
         digest = hashlib.sha256()
         size = 0
-        with os.fdopen(fd, "wb") as stream, requests.get(url, stream=True, timeout=(15, 90)) as response:
+        with os.fdopen(fd, "wb") as stream, _release_get(url, stream=True, timeout=(15, 90)) as response:
             response.raise_for_status()
             for chunk in response.iter_content(1024 * 1024):
                 if not chunk:
@@ -136,7 +153,7 @@ def _stage_app_update() -> dict[str, object]:
         raise RuntimeError("程序更新发布者公钥未配置")
     import requests
 
-    response = requests.get(manifest_url, timeout=(15, 30))
+    response = _release_get(manifest_url, timeout=(15, 30))
     if response.status_code == 404:
         return {"app": "no_published_release", "version": installed_version()}
     response.raise_for_status()
