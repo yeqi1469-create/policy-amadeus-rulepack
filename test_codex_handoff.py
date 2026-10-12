@@ -15,6 +15,22 @@ from update_progress import activity_caption, update_detail_text
 
 
 class HandoffTests(unittest.TestCase):
+    def test_new_verified_input_requeues_once_without_periodic_duplicate(self):
+        status={'state':'retry_pending','source_errors':{self.source:{'reason':'双轮核验不一致',
+                'current_evidence':{self.url:'b'*64}}}}
+        bridge.submit(status)
+        first=next(iter(bridge.read('codex_repair_requests.json')['requests']))
+        data=bridge.read('codex_repair_requests.json')
+        data['requests'][first].update(state='awaiting_evidence',queue_accepted=True)
+        write_json(bridge.folder()/'codex_repair_requests.json',data)
+        bridge.submit(status)
+        self.assertEqual(len(bridge.read('codex_repair_requests.json')['requests']),1)
+        status['source_errors'][self.source]['current_evidence'][self.url]='c'*64
+        bridge.submit(status)
+        tickets=bridge.read('codex_repair_requests.json')['requests']
+        self.assertEqual(len(tickets),2)
+        self.assertEqual(sum(t.get('state')=='pending' for t in tickets.values()),1)
+
     def test_retired_origin_requires_explicit_signed_full_current_migration_and_fresh_target(self):
         from current_law_review import MODE
         source='Country — Lithuania'

@@ -976,6 +976,7 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                 if time.time() - recent.get("failed_at", 0) < 3600:
                     continue
                 for url in report.get("pending_source_fingerprints", {}).get(source, {}):
+                    evidence=None
                     record("fetching_evidence", source=source, source_index=source_index,
                            source_total=len(report["changed"]), source_errors=source_errors,
                            operation="准备该国家的正文证据", message="正在获取新旧官方法律正文")
@@ -988,6 +989,7 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                             evidence = prepare_current(source,url,type(comparison_error).__name__)
                         break
                     except Exception as exc:
+                        evidence=None
                         source_errors[source] = {"failed_at": time.time(), "reason": str(exc) if isinstance(exc, ReviewError) else type(exc).__name__}
                         record("fetching_evidence", source=source, source_errors=source_errors,
                                operation="记录失败并交接，继续其他国家", message="该入口无法自动处理，已记录具体原因")
@@ -1071,7 +1073,9 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
             # Do not leak credential subprocess output, raw HTTP body or model prompts.
             message = str(exc) if isinstance(exc, ReviewError) else "自动审查的证据获取或发布失败；待办保留，稍后重试"
             if locals().get("source") and locals().get("evidence") is not None:
-                source_errors[source] = {"failed_at": time.time(), "reason": message}
+                current_evidence={evidence.get('new_url',evidence['url']):evidence['new_sha256']}
+                current_evidence.update({d['url']:d['sha256'] for d in evidence.get('additional_documents',[])})
+                source_errors[source] = {"failed_at": time.time(), "reason": message,'current_evidence':current_evidence}
             return record("retry_pending", message=message,
                           **failure_details(exc), source_errors=locals().get("source_errors", {}),
                           failure_source="__worker__" if not repository_ready else None,

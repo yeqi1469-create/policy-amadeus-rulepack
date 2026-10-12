@@ -101,7 +101,13 @@ def submit(status):
             code = category(error.get("reason", ""))
             observations = {url: digest for url, digest in report.get("pending_source_fingerprints", {}).get(source, {}).items()
                             if isinstance(url, str) and url.startswith("https://") and isinstance(digest, str) and len(digest) == 64}
-            key = hashlib.sha256(json.dumps([source, code, observations], sort_keys=True).encode()).hexdigest()[:24]
+            candidates=dict(report.get('observed_source_fingerprints',{}).get(source,{}))
+            candidates.update(error.get('current_evidence',{}) if isinstance(error.get('current_evidence'),dict) else {})
+            current={url:value for url,value in candidates.items() if url in SOURCES.get(source,())
+                     and isinstance(value,str) and len(value)==64 and all(c in '0123456789abcdef' for c in value)}
+            signature=[source,code,observations]
+            if current: signature.extend((current,list(SOURCES.get(source,()))))
+            key = hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()[:24]
             # A catalogue/comparison rejection can be described by either
             # the reviewer or the body validator. That wording change is not
             # new official evidence. Keep its existing owner/delivery state.
@@ -110,6 +116,7 @@ def submit(status):
                 same=[item for item in tickets.values() if item.get('source')==source
                     and item.get('state')!='resolved' and item.get('category') in evidence_codes
                     and item.get('observed_pending')==observations
+                    and item.get('observed_current',{})==current
                     and item.get('official_sources')==list(SOURCES.get(source,()))]
                 if same:
                     key=min(same,key=lambda item:item.get('first_seen',''))['id']
@@ -122,6 +129,7 @@ def submit(status):
                           first_seen=ticket.get("first_seen", now), last_seen=now,
                           state=ticket.get("state", "pending"), official_sources=list(SOURCES.get(source, ())),
                           observed_pending=observations, observed_categories=categories,
+                          observed_current=current,
                           target_thread_id=config["target_thread_id"])
             tickets[key] = ticket
         queue.update(updated_at=now, target_thread_id=config["target_thread_id"])
