@@ -15,6 +15,22 @@ from update_progress import activity_caption, update_detail_text
 
 
 class HandoffTests(unittest.TestCase):
+    def test_retired_origin_requires_explicit_signed_full_current_migration_and_fresh_target(self):
+        from current_law_review import MODE
+        source='Country — Lithuania'
+        old='https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.163482'
+        new='https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr'
+        pack={'rulepack_version':'synthetic-verified','reviewed_source_fingerprints':{source:{new:'b'*64}},
+              'reviewed_source_replacements':{source:{old:{'url':new,'sha256':'b'*64,'evidence_mode':MODE}}}}
+        report={'rulepack_version':pack['rulepack_version'],'changed':[],'unreachable':[],
+                'observed_source_fingerprints':{source:{old:'a'*64,new:'b'*64}}}
+        for mode,resolved in [(MODE,True),('historical_comparison',False)]:
+            pack['reviewed_source_replacements'][source][old]['evidence_mode']=mode
+            write_json(bridge.folder()/'codex_repair_requests.json',{'requests':{'synthetic':{'source':source,'state':'awaiting_evidence'}}})
+            write_json(bridge.folder()/'knowledge_coverage_latest.json',report)
+            with patch('rulepack_manager.load_rulepack',return_value=pack):bridge.reconcile()
+            self.assertEqual(bridge.read('codex_repair_requests.json')['requests']['synthetic']['state']=='resolved',resolved)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

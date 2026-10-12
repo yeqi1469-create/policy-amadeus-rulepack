@@ -782,7 +782,8 @@ def merge_proposal(pack: dict, proposal: dict, now: datetime | None = None) -> d
         result['reviewed_source_fingerprints'][evidence['source']][extra['url']]=extra['sha256']
     if new_url != evidence["url"]:
         result.setdefault("reviewed_source_replacements", {}).setdefault(evidence["source"], {})[evidence["url"]] = {
-            "url": new_url, "sha256": evidence["new_sha256"], "reason": decision["reason"], "proposal_id": proposal["id"]}
+            "url": new_url, "sha256": evidence["new_sha256"], "reason": decision["reason"], "proposal_id": proposal["id"],
+            "evidence_mode":evidence.get('mode','historical_comparison')}
     result.setdefault("codex_review_history", []).append({"id": proposal["id"], "source": evidence["source"],
         "url": evidence["url"], "sha256": evidence["new_sha256"], "classification": decision["classification"],
         "reason": decision["reason"], "quotes": decision["quotes"], "second_review_reason": proposal["verification"]["reason"],

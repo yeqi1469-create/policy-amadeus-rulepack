@@ -279,7 +279,10 @@ def reconcile(status=None):
                     # detector: a fresh matching observation of the approved
                     # configured alternate. Never trust a replacement name
                     # alone or infer that a reachable portal is equivalent.
-                    return bool(url in SOURCES.get(source,()) and target in SOURCES.get(source,())
+                    from current_law_review import MODE,RETIRED_ENDPOINTS
+                    trusted_origin=url in SOURCES.get(source,()) or (
+                        replacement.get('evidence_mode')==MODE and url in RETIRED_ENDPOINTS.get(source,()))
+                    return bool(trusted_origin and target in SOURCES.get(source,())
                         and expected and approved.get(target) == expected and observed.get(target) == expected)
                 resolved = bool(observed) and all(verified_endpoint(url,digest) for url,digest in observed.items())
             if resolved and ticket.get("state") != "resolved":
