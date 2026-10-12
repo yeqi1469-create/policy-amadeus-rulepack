@@ -105,7 +105,7 @@ def _verify_manifest(manifest: dict[str, object], public_key_b64: str) -> tuple[
     return version, download_url, digest
 
 
-def _download_verified(url: str, expected_hash: str) -> Path:
+def _download_verified(url: str, expected_hash: str, progress=None) -> Path:
     import requests
 
     fd, name = tempfile.mkstemp(prefix="policy-amadeus-", suffix=".exe", dir=_data_dir())
@@ -113,8 +113,13 @@ def _download_verified(url: str, expected_hash: str) -> Path:
     try:
         digest = hashlib.sha256()
         size = 0
+        started=time.monotonic()
         with os.fdopen(fd, "wb") as stream, _release_get(url, stream=True, timeout=(15, 90)) as response:
             response.raise_for_status()
+            try:
+                total=int(response.headers.get('Content-Length',0))
+            except (ValueError,TypeError):
+                total=0
             for chunk in response.iter_content(1024 * 1024):
                 if not chunk:
                     continue
@@ -123,6 +128,11 @@ def _download_verified(url: str, expected_hash: str) -> Path:
                     raise RuntimeError("程序更新包超过大小上限")
                 digest.update(chunk)
                 stream.write(chunk)
+                if progress:
+                    elapsed=max(0.001,time.monotonic()-started)
+                    progress({'operation':'下载并校验程序更新','completed_bytes':size,
+                        'total_bytes':total,'download_percent':min(99,int(size*100/total)) if total>0 else None,
+                        'remaining_seconds':int((total-size)*elapsed/size) if total>size else None})
         with staged.open("rb") as stream:
             magic = stream.read(2)
         if size < 1024 * 1024 or digest.hexdigest() != expected_hash or magic != b"MZ":
@@ -183,7 +193,7 @@ def _helper_alive(pid: int) -> bool:
         kernel.CloseHandle(handle)
 
 
-def _stage_app_update() -> dict[str, object]:
+def _stage_app_update(*, restart_after_install=False, progress=None) -> dict[str, object]:
     if not getattr(sys, "frozen", False) or sys.platform != "win32":
         return {"app": "source_run", "version": installed_version()}
     config = _channel_config()
@@ -210,19 +220,36 @@ def _stage_app_update() -> dict[str, object]:
         if sha256_file(Path(sys.executable)) == digest:
             return {"app": "current", "version": installed_version()}
     if _already_staged(version, digest):
-        return {"app": "waiting_for_app_exit", "installed_version": installed_version(), "new_version": version}
-    staged = _download_verified(download_url, digest)
+        if restart_after_install:
+            # Replace the waiting helper with this version's tested helper;
+            # an older helper cannot acquire a restart flag retroactively.
+            pass
+        else:
+            return {"app": "waiting_for_app_exit", "installed_version": installed_version(), "new_version": version}
+    if progress:
+        progress({"operation":"下载并验证程序更新", "version":version})
+    staged = _download_verified(download_url, digest, progress=progress) if progress else _download_verified(download_url, digest)
+    if restart_after_install:
+        try:
+            cancel=json.loads((_data_dir()/"startup_restart_cancelled.json").read_text(encoding='utf-8'))
+            if cancel.get('parent_pid')==os.getpid() and cancel.get('cancelled'):
+                staged.unlink(missing_ok=True)
+                return {'app':'startup_cancelled'}
+        except (OSError,ValueError):
+            pass
     helper = _data_dir() / "apply_app_update.ps1"
     shutil.copyfile(_resource("apply_app_update.ps1"), helper)
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     installer_log = _data_dir() / 'app_install_helper.log'
     try:
         with installer_log.open('ab') as log:
-            process = subprocess.Popen(
-                ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+            command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                  "-WindowStyle", "Hidden", "-File", str(helper), "-ParentPid", str(os.getpid()),
                  "-Target", str(Path(sys.executable).resolve()), "-Staged", str(staged),
-                 "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json"), "-CandidateVersion", version],
+                 "-ExpectedHash", digest, "-StatusFile", str(_data_dir() / "app_install_status.json"), "-CandidateVersion", version]
+            if restart_after_install:
+                command.append("-RestartAfterInstall")
+            process = subprocess.Popen(command,
                 creationflags=flags, stdout=log, stderr=subprocess.STDOUT,
             )
         try:

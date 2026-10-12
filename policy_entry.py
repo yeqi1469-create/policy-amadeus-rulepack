@@ -45,11 +45,27 @@ def main() -> None:
         run(retry_now="--retry-now" in sys.argv)
         return
     if "--auto-update" not in sys.argv:
-        from app_updater import start_app_update_check, start_schedule_registration
+        from app_updater import start_app_update_check, start_schedule_registration, installed_version
+        if sys.platform=='win32' and getattr(sys,'frozen',False):
+            recovered='--startup-update-recovery' in sys.argv
+            applied=False
+            if '--startup-update-applied' in sys.argv:
+                index=sys.argv.index('--startup-update-applied')
+                applied=index+1<len(sys.argv) and sys.argv[index+1]==installed_version()
+            if os.environ.get('POLICY_AMADEUS_STARTUP_AUDIT')=='1' and applied:
+                from update_storage import write_json
+                from codex_review_worker import folder
+                write_json(folder()/'startup_relaunch_probe.json',{'auto_relaunched':True,'app_version':installed_version()})
+                return
+            if not applied and not recovered:
+                from startup_update import run_before_ui
+                if run_before_ui()!='continue':
+                    return
         from policy_studio import PolicyStudio
 
         start_schedule_registration()
-        start_app_update_check()
+        if not (sys.platform=='win32' and getattr(sys,'frozen',False)):
+            start_app_update_check()
         PolicyStudio().mainloop()
         return
 

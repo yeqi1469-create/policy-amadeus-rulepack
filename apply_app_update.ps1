@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Staged,
     [Parameter(Mandatory = $true)][string]$ExpectedHash,
     [Parameter(Mandatory = $true)][string]$StatusFile,
-    [string]$CandidateVersion = ''
+    [string]$CandidateVersion = '',
+    [switch]$RestartAfterInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +31,7 @@ function Get-AppVersionParts([string]$Version) {
     return @()
 }
 try {
+    if (Test-Path -LiteralPath $Target) { $previousHash = Get-UpdateHash $Target }
     while ((Get-Date) -lt $deadline) {
         $running = Get-CimInstance Win32_Process -Filter "name = 'Policy Amadeus.exe'" |
             Where-Object { $_.ExecutablePath -eq $Target }
@@ -54,7 +56,9 @@ try {
         $newerSelected = $selectedVersion.Count -eq 2 -and $ownVersion.Count -eq 2 -and (
             $selectedVersion[0] -gt $ownVersion[0] -or ($selectedVersion[0] -eq $ownVersion[0] -and $selectedVersion[1] -ge $ownVersion[1]))
         $unknownVersionWithLiveReplacement = $ownVersion.Count -eq 0 -and $selectionAlive -and (Test-Path -LiteralPath $selection.staged)
-        if ($selection.sha256 -ne $ExpectedHash -and ($newerSelected -or $unknownVersionWithLiveReplacement)) {
+        $differentLiveHelper = $selectionAlive -and $selection.helper_pid -ne $PID
+        if (($selection.sha256 -ne $ExpectedHash -and ($newerSelected -or $unknownVersionWithLiveReplacement)) -or
+            ($newerSelected -and $differentLiveHelper)) {
             # Keep rejecting obsolete helpers even after the newer helper
             # exits and deletes its staging file. PID liveness alone is not
             # sufficient to prevent an old helper downgrading the installation.
@@ -68,6 +72,7 @@ try {
         throw 'Staged application hash does not match the signed manifest'
     }
     Copy-Item -LiteralPath $Target -Destination $backup -Force
+    $previousHash = Get-UpdateHash $backup
     $replacementStarted = $true
     Copy-Item -LiteralPath $Staged -Destination $Target -Force
     if ((Get-UpdateHash $Target) -ne $ExpectedHash) {
@@ -76,12 +81,35 @@ try {
     }
     @{ state = 'installed'; installed_at = (Get-Date).ToString('o') } |
         ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
+    if ($RestartAfterInstall) {
+        $cancelPath = Join-Path (Split-Path -Parent $StatusFile) 'startup_restart_cancelled.json'
+        $cancelled = $false
+        if (Test-Path -LiteralPath $cancelPath) {
+            $cancel = Get-Content -LiteralPath $cancelPath -Raw | ConvertFrom-Json
+            $cancelled = $cancel.parent_pid -eq $ParentPid -and $cancel.cancelled -eq $true
+        }
+        if (-not $cancelled) {
+            # Only relaunch this exact hash-verified application. Never stop
+            # another GUI or run a command taken from diagnostic data.
+            Start-Process -FilePath $Target -ArgumentList @('--startup-update-applied', $CandidateVersion) -WindowStyle Normal
+        }
+    }
 } catch {
     if ($replacementStarted -and (Test-Path -LiteralPath $backup)) {
         Copy-Item -LiteralPath $backup -Destination $Target -Force -ErrorAction SilentlyContinue
     }
     @{ state = 'failed'; error = $_.Exception.Message; checked_at = (Get-Date).ToString('o') } |
         ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
+    if ($RestartAfterInstall -and $previousHash -and
+        (Test-Path -LiteralPath $Target) -and (Get-UpdateHash $Target) -eq $previousHash) {
+        $cancelPath = Join-Path (Split-Path -Parent $StatusFile) 'startup_restart_cancelled.json'
+        $cancelled = $false
+        if (Test-Path -LiteralPath $cancelPath) {
+            $cancel = Get-Content -LiteralPath $cancelPath -Raw | ConvertFrom-Json
+            $cancelled = $cancel.parent_pid -eq $ParentPid -and $cancel.cancelled -eq $true
+        }
+        if (-not $cancelled) { Start-Process -FilePath $Target -ArgumentList '--startup-update-recovery' -WindowStyle Normal }
+    }
 } finally {
     if ($mutexHeld) { $installMutex.ReleaseMutex() }
     if ($installMutex) { $installMutex.Dispose() }

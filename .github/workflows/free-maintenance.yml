@@ -49,6 +49,13 @@ jobs:
       - name: Compiled background survives launching process exit
         if: steps.changes.outputs.needed == 'true'
         run: python audit_packaged_runtime_local.py 'dist/Policy Amadeus.exe'
+      - name: Actual installation automatically relaunches compiled application
+        if: steps.changes.outputs.needed == 'true'
+        shell: pwsh
+        run: |
+          $candidateVersion = python -c "import json; print(json.load(open('app_version.json'))['version'])"
+          python audit_startup_relaunch_local.py 'dist/Policy Amadeus.exe' $candidateVersion
+          if ($LASTEXITCODE -ne 0) { throw 'Automatic relaunch verification failed' }
       - name: Sign release using encrypted repository secret
         if: steps.changes.outputs.needed == 'true'
         env:

@@ -830,11 +830,23 @@ def get_status(wait_seconds: float = 0) -> dict[str, object]:
     return result
 
 
-def require_no_detected_change() -> dict[str, object]:
+def require_no_detected_change(markets=None) -> dict[str, object]:
     status = get_status(20)
     if status.get("state") == "checking":
         raise RuntimeError("政策知识库更新检查尚未完成，请稍后重试。")
     if status.get("state") == "review_required":
+        if markets:
+            # Keep every shared baseline and every law in either the sales
+            # market or operator's registration country gated. Other national
+            # findings stay in the ledger/report; they are NOT approved here.
+            names=set(markets)
+            if names and all(name in COUNTRY_OFFICIAL_SOURCES for name in names):
+                related=[source for source in status.get('changed',[]) if not source.startswith('Country — ')
+                         or source.removeprefix('Country — ') in names]
+                if not related:
+                    return {**status,'state':'applicable_markets_clear',
+                        'unrelated_findings':list(status.get('changed',[])),
+                        'message':'本次销售市场及经营者注册地没有未复核的已检测变化；其他国家待办仍保留'}
         changed = "、".join(str(item) for item in status.get("changed", []))
         from codex_review_worker import enabled as auto_review_enabled
         if auto_review_enabled():

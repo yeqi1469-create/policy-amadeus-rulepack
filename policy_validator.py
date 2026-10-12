@@ -81,7 +81,18 @@ def validate_market(policies: list[tuple[str, str]], settings: dict[str, object]
     warnings: list[str] = []
     checks: list[str] = []
     meta = ruleset_metadata()
-    update_status = require_no_detected_change()
+    fields=settings.get('license_fields')
+    operator=str(fields.get('country','') if isinstance(fields,dict) else '').strip()
+    relevant=None
+    if country and operator:
+        try:
+            from policy_generator import country_profile
+            relevant=[country_profile(country)[0],country_profile(operator)[0]]
+        except (ValueError,RuntimeError):
+            pass
+    update_status = require_no_detected_change(markets=relevant)
+    if update_status.get('unrelated_findings'):
+        warnings.append('其他国家仍有未完成待办，不代表全部国家法律已核验：'+', '.join(update_status['unrelated_findings']))
 
     if meta["ruleset_expired"] == "yes":
         errors.append(f"法规规则库已超过复核期限 {meta['review_due']}")
