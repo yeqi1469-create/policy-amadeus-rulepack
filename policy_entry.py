@@ -10,8 +10,15 @@ from pathlib import Path
 
 def main() -> None:
     if "--runtime-audit" in sys.argv:
-        from packaged_runtime_audit import run
-        run()
+        try:
+            from packaged_runtime_audit import run
+            run()
+        except Exception:
+            if os.environ.get("POLICY_AMADEUS_PACKAGED_AUDIT") != "1":
+                raise
+            audit_folder = Path(os.environ["LOCALAPPDATA"])/"Policy Amadeus"
+            audit_folder.mkdir(parents=True, exist_ok=True)
+            (audit_folder/"audit_entry_failure.txt").write_text(traceback.format_exc(), encoding="utf-8")
         return
     if "--review-health" in sys.argv:
         from codex_review_worker import locate_git, locate_codex, _repository_session, signed_repository_base, folder, failure_details

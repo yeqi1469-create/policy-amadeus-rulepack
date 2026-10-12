@@ -16,20 +16,10 @@ def run() -> None:
     root = folder()
     root.mkdir(parents=True, exist_ok=True)
     role = sys.argv[sys.argv.index("--runtime-audit") + 1]
-    if role in ("parent", "legacy-parent"):
+    if role == "parent":
         write_json(root/"parent.json", {"resources": sys._MEIPASS, "pid": os.getpid()})
         command = [sys.executable, "--runtime-audit", "child"]
-        if role == "legacy-parent":
-            # Negative control reproduces the old launcher's inherited runtime.
-            # Never reachable from ordinary update or review entry points.
-            import subprocess
-            environment = dict(os.environ)
-            environment.pop("PYINSTALLER_RESET_ENVIRONMENT", None)
-            with (root/"worker.log").open("ab") as log:
-                subprocess.Popen(command, env=environment, stdout=log, stderr=subprocess.STDOUT,
-                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        else:
-            spawn_review_process(command, root/"worker.log")
+        spawn_review_process(command, root/"worker.log")
         deadline = time.monotonic() + 15
         while not (root/"child_started.json").exists() and time.monotonic() < deadline:
             time.sleep(0.1)
