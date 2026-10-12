@@ -1,6 +1,6 @@
 {
-  "version": "2026.10.12-16",
+  "version": "2026.10.12-17",
   "download_url": "https://raw.githubusercontent.com/yeqi1469-create/policy-amadeus-rulepack/main/PolicyAmadeus.exe",
-  "sha256": "e7aa85566f0e810ee301325e371be793c82e3a9583b264a29acc8707a6b4a791",
-  "signature": "rZ/Mwr9V9p0JsuPsuCJzoBnWW7wJWMqpZtp/6EAjrqFddMBLQn1wnNz0+Xy8dTj3r/PUZjsZGJaNZZW7TPh9Bg=="
+  "sha256": "dad12364d20e02a1fd64d5f1f476eec6cca8c3c40606f8e03788e250b9a8e676",
+  "signature": "3mHxWiazUwQecW3yRBxEXz2B0VhPCpZC4XdLkGOF4dS5wn9uMfs4BdcP3CSYvOy0nDYEDETX68YHDUKUgORgAw=="
 }
