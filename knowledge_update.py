@@ -220,7 +220,12 @@ COUNTRY_OFFICIAL_SOURCES: dict[str, tuple[str, ...]] = {
         "https://pisrs.si/pregledPredpisa?id=ZAKO7054&tab=analiticni",
         "https://pisrs.si/Pis.web/pregledPredpisa?id=ZAKO1263",
     ),
-    "Latvia": ("https://likumi.lv/ta/id/23309",),
+    "Latvia": (
+        "https://likumi.lv/ta/id/23309",
+        "https://likumi.lv/ta/id/266462",
+        "https://likumi.lv/ta/id/96619",
+        "https://likumi.lv/ta/id/300099",
+    ),
     # Riigi Teataja's browser route is an Angular shell.  Its official public
     # XML API returns the actual consolidated statute and is stable enough for
     # fingerprinting; retain the browser route as a human-readable fallback.

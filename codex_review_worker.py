@@ -653,6 +653,8 @@ def validate_proposal(proposal: dict, pack: dict) -> None:
     if evidence.get('mode') == MODE:
         validate_current(evidence,decision,verifier)
     else:
+        if evidence.get('additional_documents'):
+            raise ReviewError('历史比较提案不能附加未经现行法路径核验的额外来源')
         if evidence["url"] not in SOURCES.get(evidence["source"], ()):
             raise ReviewError("提案不是已配置官方来源")
         old_url = evidence.get("old_url", evidence["url"])
@@ -669,7 +671,8 @@ def validate_proposal(proposal: dict, pack: dict) -> None:
         quotes = row.get("quotes")
         if not row.get("reason") or not isinstance(quotes, list) or not quotes:
             raise ReviewError("审查缺少可核对的原文依据")
-        if any(not isinstance(q, str) or len(q.strip()) < 12 or q not in evidence["after"] for q in quotes):
+        quote_body=evidence['after']+'\n'.join(d['body'] for d in evidence.get('additional_documents',[])) if evidence.get('mode')==MODE else evidence['after']
+        if any(not isinstance(q, str) or len(q.strip()) < 12 or q not in quote_body for q in quotes):
             raise ReviewError("审查引用与官方正文不匹配")
     patches = decision.get("patches")
     if not isinstance(patches, list):
@@ -734,6 +737,9 @@ def _apply_patches(pack: dict, patches: list) -> None:
                 overlay_fields = {"legal_guarantee": str, "national_product_marketing_clause": str,
                     "electronic_withdrawal_function": bool, "withdrawal_start_label": str,
                     "withdrawal_confirm_label": str, "official_update_note": str}
+                overlay_fields.update(statutory_withdrawal_days=int,refund_deadline_days=int,
+                    refund_deadline_unit=str,repair_remedy_liability_extension_months=int,
+                    objective_conformity_includes_repairability=bool)
                 expected_type = type(target[field]) if field in target else overlay_fields.get(field) if section == "country_overlays" else None
                 if expected_type is None or type(value) is not expected_type or isinstance(value, (dict, list)):
                     raise ValueError()
@@ -764,6 +770,8 @@ def merge_proposal(pack: dict, proposal: dict, now: datetime | None = None) -> d
         _apply_patches(result, decision["patches"])
     new_url = evidence.get("new_url", evidence["url"])
     result.setdefault("reviewed_source_fingerprints", {}).setdefault(evidence["source"], {})[new_url] = evidence["new_sha256"]
+    for extra in evidence.get('additional_documents',[]):
+        result['reviewed_source_fingerprints'][evidence['source']][extra['url']]=extra['sha256']
     if new_url != evidence["url"]:
         result.setdefault("reviewed_source_replacements", {}).setdefault(evidence["source"], {})[evidence["url"]] = {
             "url": new_url, "sha256": evidence["new_sha256"], "reason": decision["reason"], "proposal_id": proposal["id"]}
@@ -998,6 +1006,9 @@ def _run_one(*, wait_for_install=True, retry_now=False) -> dict:
                    operation="确认审查期间正文未再次变化", endpoint=reviewed_url, operation_limit_seconds=90)
             if knowledge._fingerprint(reviewed_url) != evidence["new_sha256"]:
                 raise ReviewError("官方正文在审查中再次变化；自动重新核查")
+            for extra in evidence.get('additional_documents',[]):
+                if knowledge._fingerprint_source((extra['url'],))[extra['url']]!=extra['sha256']:
+                    raise ReviewError('附属法规在审查期间变化，重新核查；未发布')
             # Cloud audit/build commits may advance HEAD during model review.
             # Rebase only when the signed legal base is exactly unchanged.
             record("reviewing", stage="verifying", source=source, source_errors=source_errors,

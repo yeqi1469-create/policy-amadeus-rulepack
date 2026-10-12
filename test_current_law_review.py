@@ -42,6 +42,19 @@ class FullCurrentRevalidationTests(unittest.TestCase):
     def test_metadata_only_without_old_body_forbidden(self):
         self.decision['classification']='metadata_only'
         with self.assertRaises(worker.ReviewError): worker.validate_proposal(self.proposal(),self.pack)
+    def test_unconfigured_supplement_cannot_be_approved(self):
+        self.evidence['additional_documents']=[{'url':'https://untrusted.example/law','sha256':self.evidence['new_sha256'],'body':self.body}]
+        with self.assertRaises(worker.ReviewError): worker.validate_proposal(self.proposal(),self.pack)
+    def test_single_country_numeric_override_does_not_mutate_eu_baseline(self):
+        pack=copy.deepcopy(self.pack)
+        eu_before=copy.deepcopy(pack['coverage_groups']['EU'])
+        worker._apply_patches(pack,[{'path':'/country_overlays/Lithuania/repair_remedy_liability_extension_months','value_json':'0'}])
+        self.assertEqual(pack['coverage_groups']['EU'],eu_before)
+        rendered=current.policy_examples('Country — Lithuania',pack)
+        self.assertTrue(rendered['supported'])
+        self.assertNotIn('extended once by **12 months**',rendered['policies']['Refund and Return Policy'])
+        with self.assertRaises(worker.ReviewError):
+            worker._apply_patches(pack,[{'path':'/country_overlays/Lithuania/refund_deadline_days','value_json':'0'}])
     def test_fabricated_old_body_forbidden(self):
         self.evidence['before']=self.body
         with self.assertRaises(worker.ReviewError): worker.validate_proposal(self.proposal(),self.pack)

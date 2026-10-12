@@ -599,6 +599,10 @@ def _generate_single_bundle(
     group_rules = rulepack["coverage_groups"].get(jurisdiction_group)
     if not group_rules:
         raise RuntimeError(f"规则包缺少 {jurisdiction_group} 的法定参数，已停止生成。")
+    overrides=rulepack.get('country_overlays',{}).get(canonical,{})
+    group_rules={**group_rules,**{key:overrides[key] for key in (
+        'statutory_withdrawal_days','refund_deadline_days','refund_deadline_unit',
+        'repair_remedy_liability_extension_months','objective_conformity_includes_repairability') if key in overrides}}
     statutory_days = group_rules.get("statutory_withdrawal_days")
     has_withdrawal = isinstance(statutory_days, int)
     commercial_return_days = int(group_rules["commercial_return_days"])

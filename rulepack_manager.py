@@ -95,6 +95,17 @@ def validate_rulepack(data: dict[str, Any]) -> None:
     for source_group, urls in data["official_sources"].items():
         if not isinstance(urls, list) or not urls or any(not str(url).lower().startswith("https://") for url in urls):
             raise RulepackError(f"{source_group} 的官方来源无效")
+    for country,overlay in data.get('country_overlays',{}).items():
+        for field in ('statutory_withdrawal_days','refund_deadline_days'):
+            if field in overlay and (type(overlay[field]) is not int or not 1<=overlay[field]<=365):
+                raise RulepackError(f'{country} 的 {field} 国家参数无效')
+        if 'refund_deadline_unit' in overlay and overlay['refund_deadline_unit'] not in {'calendar days','business days'}:
+            raise RulepackError(f'{country} 的退款单位无效')
+        if 'repair_remedy_liability_extension_months' in overlay and (
+                type(overlay['repair_remedy_liability_extension_months']) is not int or not 0<=overlay['repair_remedy_liability_extension_months']<=120):
+            raise RulepackError(f'{country} 的修理延长期无效')
+        if 'objective_conformity_includes_repairability' in overlay and type(overlay['objective_conformity_includes_repairability']) is not bool:
+            raise RulepackError(f'{country} 的可修理性国家参数无效')
     for source, endpoints in data.get("reviewed_source_fingerprints", {}).items():
         if not isinstance(endpoints, dict) or any(not str(url).startswith("https://") or not re_full_sha256(str(digest)) for url, digest in endpoints.items()):
             raise RulepackError(f"{source} 的已复核来源指纹无效")
