@@ -125,9 +125,9 @@ def update_detail_text(status, events=(), requests=(), now=None):
     lines.extend(("", "当前聊天交接："+handoff_label(update)))
     for item in requests:
         if item.get("state") != "resolved":
-        states = {"pending":"等待本聊天接手" if item.get("queue_accepted") else "尚未成功发送",
-                  "processing":"当前聊天处理中", "resolved":"已复核解决"}
-        lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；{states.get(item.get('state'),'状态待确认')}")
+            states = {"pending":"等待本聊天接手" if item.get("queue_accepted") else "尚未成功发送",
+                      "processing":"当前聊天处理中", "resolved":"已复核解决"}
+            lines.append(f"{item.get('source')}：{item.get('action') or item.get('reason')}；{states.get(item.get('state'),'状态待确认')}")
     lines.extend(("", "最近实际步骤（北京时间）："))
     for event in list(events)[-20:]:
         try:
