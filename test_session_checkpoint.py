@@ -47,5 +47,16 @@ class AutomaticDraftHandoffTests(unittest.TestCase):
     def test_corrupt_local_checkpoint_is_not_loaded(self):
         self.path.write_text('{corrupt',encoding='utf-8')
         self.assertIsNone(checkpoint.restore(self.path,'2026.10.12-21'))
+    def test_failed_install_reenters_verified_handoff_without_manual_restart(self):
+        for state in ('installation_failed','restart_needed'):
+            gui=self.fake_gui(busy=True)
+            gui._app_handoff_started=False
+            gui._app_handoff_queue=queue.Queue()
+            with patch('app_updater.sys.frozen',True,create=True),patch('policy_studio.sys.platform','win32'), \
+                 patch('policy_studio.threading.Thread') as thread:
+                PolicyStudio._automatic_update_handoff(gui,{'app':state})
+            thread.return_value.start.assert_called_once()
+            self.assertTrue(gui._app_handoff_started)
+            gui.destroy.assert_not_called()
 
 if __name__=='__main__': unittest.main()

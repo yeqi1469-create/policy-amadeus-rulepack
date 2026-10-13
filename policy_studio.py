@@ -249,7 +249,8 @@ class PolicyStudio(tk.Tk):
 
     def _automatic_update_handoff(self,status):
         if not getattr(sys,'frozen',False) or sys.platform!='win32': return
-        if not self._app_handoff_started and time.time()>=self._app_handoff_retry_after and status.get('app') in {'waiting_for_app_exit','installer_inactive'}:
+        if not self._app_handoff_started and time.time()>=self._app_handoff_retry_after and status.get('app') in {
+                'waiting_for_app_exit','installer_inactive','installation_failed','restart_needed'}:
             self._app_handoff_started=True
             def prepare():
                 try:
