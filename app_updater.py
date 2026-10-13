@@ -106,7 +106,41 @@ def _verify_manifest(manifest: dict[str, object], public_key_b64: str) -> tuple[
     return version, download_url, digest
 
 
+class UpdateIntegrityError(RuntimeError):
+    pass
+
+
 def _download_verified(url: str, expected_hash: str, progress=None) -> Path:
+    try:
+        return _download_verified_once(url, expected_hash, progress)
+    except UpdateIntegrityError:
+        # Mutable raw GitHub URLs can briefly serve an older binary than the
+        # manifest. Recover only from the exact authorized repository commit;
+        # the signed expected hash remains mandatory, never replaced by API data.
+        from urllib.parse import urlsplit, urlunsplit
+        parsed=urlsplit(url)
+        prefix='/yeqi1469-create/policy-amadeus-rulepack/main/'
+        if parsed.scheme!='https' or parsed.hostname!='raw.githubusercontent.com' or not parsed.path.startswith(prefix):
+            raise
+        import requests
+        endpoint='https://api.github.com/repos/yeqi1469-create/policy-amadeus-rulepack/git/ref/heads/main'
+        try:
+            response=requests.get(endpoint,timeout=(10,20))
+        except (requests.Timeout,requests.ConnectionError):
+            session=requests.Session()
+            session.trust_env=False
+            response=session.get(endpoint,timeout=(10,20))
+        response.raise_for_status()
+        commit=response.json()['object']['sha']
+        if len(commit)!=40 or any(c not in '0123456789abcdef' for c in commit):
+            raise UpdateIntegrityError('发布提交无效；保留原程序')
+        pinned=urlunsplit((parsed.scheme,parsed.netloc,
+            parsed.path.replace('/main/','/'+commit+'/',1),'',''))
+        if progress: progress({'operation':'下载内容与清单不一致；从固定发布提交重新核验'})
+        return _download_verified_once(pinned,expected_hash,progress)
+
+
+def _download_verified_once(url: str, expected_hash: str, progress=None) -> Path:
     import requests
 
     fd, name = tempfile.mkstemp(prefix="policy-amadeus-", suffix=".exe", dir=_data_dir())
@@ -137,7 +171,7 @@ def _download_verified(url: str, expected_hash: str, progress=None) -> Path:
         with staged.open("rb") as stream:
             magic = stream.read(2)
         if size < 1024 * 1024 or digest.hexdigest() != expected_hash or magic != b"MZ":
-            raise RuntimeError("程序更新包校验失败")
+            raise UpdateIntegrityError("程序更新包校验失败")
         return staged
     except Exception:
         staged.unlink(missing_ok=True)
