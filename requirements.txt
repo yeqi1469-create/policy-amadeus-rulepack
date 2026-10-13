@@ -1,0 +1,6 @@
+Pillow
+pypdf
+deep-translator
+translatepy
+requests
+PyInstaller

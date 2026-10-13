@@ -12,8 +12,6 @@ from pathlib import Path
 from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
-from knowledge_update import get_status, start_startup_check
-from update_progress import progress_caption, activity_caption, update_detail_text, app_update_caption
 from policy_generator import extract_license_data, extract_license_fields, generate_translated_bundle
 
 
@@ -142,16 +140,10 @@ class PolicyStudio(tk.Tk):
         self.policies: list[tuple[str, str]] = []
         self.settings: dict[str, object] = {}
         self.copy_status = tk.StringVar(value="请选择要复制的政策")
-        self.knowledge_status = tk.StringVar(value="正在检查政策知识库更新……")
         self._generation_queue: queue.Queue = queue.Queue()
         self._license_queue: queue.Queue = queue.Queue()
         self._license_busy = False
         self._generation_active=False
-        self._app_handoff_queue=queue.Queue()
-        self._app_handoff_started=False
-        self._app_handoff_result=None
-        self._app_handoff_retry_after=0
-        self._app_handoff_failures=0
         self.step = 0
         self._resize_job = None
         self._background_photo = None
@@ -167,15 +159,12 @@ class PolicyStudio(tk.Tk):
         self.card = tk.Frame(self.canvas, bg=PANEL, highlightbackground=EDGE, highlightthickness=2)
         self.card_window = self.canvas.create_window(0, 0, window=self.card, width=640, height=400)
         self._build_card()
-        start_startup_check()
-        self.after(200, self._poll_knowledge_check)
         if sys.platform == "win32":
             self.after_idle(self._apply_windows_icons)
         self.after_idle(lambda: self._set_card_transparency(True))
         self.bind("<Configure>", self._schedule_render)
         self.after(30, self._render_background)
         self.show_step(0)
-        self._restore_update_draft()
 
     def destroy(self) -> None:
         if getattr(self,"_destroying",False):
@@ -218,79 +207,12 @@ class PolicyStudio(tk.Tk):
             self.country.set("，".join(selected))
             self.country_display.set("、".join(MARKET_NAMES_CN.get(name, name) for name in selected))
 
-    def _poll_knowledge_check(self) -> None:
-        from app_updater import read_app_update_status
-        status = {**get_status(), "app_update_status":read_app_update_status()}
-        self.software_status.set(app_update_caption(status["app_update_status"]))
-        self.knowledge_status.set(str(status.get("message", "正在检查政策知识库更新……")))
-        self.progress_status = status
-        self._update_progress()
-        self._refresh_update_details()
-        self._automatic_update_handoff(status['app_update_status'])
-        if getattr(self,'_destroying',False): return
-        self.after(300 if status.get("state") == "checking" else 1000 if status.get("update_status") else 5000, self._poll_knowledge_check)
 
     def _draft_config(self):
         return {'country':self.country.get(),'output_language':self.output_language.get(),
             'store_name':self.store_name.get(),'website':self.website.get(),'email':self.email.get(),
             'phone':self.phone.get(),'customs_mode':self.customs_mode.get(),'license_pdf':self.pdf_path.get()}
 
-    def _restore_update_draft(self):
-        from app_updater import _data_dir,installed_version
-        from session_checkpoint import restore,acknowledge
-        path=_data_dir()/'private_session_checkpoint.json'
-        record=restore(path,installed_version())
-        if not record: return
-        from update_storage import write_json
-        write_json(self._config_path(),record['config'])
-        self._load_config()
-        self.show_step(record['step'])
-        acknowledge(path)
-
-    def _automatic_update_handoff(self,status):
-        if not getattr(sys,'frozen',False) or sys.platform!='win32': return
-        if not self._app_handoff_started and time.time()>=self._app_handoff_retry_after and status.get('app') in {
-                'waiting_for_app_exit','installer_inactive','installation_failed','restart_needed'}:
-            self._app_handoff_started=True
-            def prepare():
-                try:
-                    from app_updater import _stage_app_update
-                    self._app_handoff_queue.put(('ok',_stage_app_update(restart_after_install=True,
-                        progress=lambda event:self._app_handoff_queue.put(('progress',event)))))
-                except Exception:
-                    self._app_handoff_queue.put(('failed',None))
-            threading.Thread(target=prepare,daemon=True).start()
-        try:
-            while True:
-                kind,result=self._app_handoff_queue.get_nowait()
-                if kind=='ok': self._app_handoff_result=result
-                elif kind=='progress':
-                    percentage=result.get('download_percent')
-                    caption=result['operation']+(f' · {percentage}%' if percentage is not None else '')
-                    if result.get('remaining_seconds') is not None: caption+=f" · 预计剩余 {result['remaining_seconds']} 秒"
-                    self.software_status.set(caption)
-                else:
-                    self._app_handoff_started=False
-                    self._app_handoff_failures+=1
-                    self._app_handoff_retry_after=time.time()+min(3600,60*2**min(6,self._app_handoff_failures-1))
-                    self.knowledge_status.set('程序安装准备暂未完成，当前资料保留；等待自动重试')
-        except queue.Empty: pass
-        result=self._app_handoff_result
-        if not result or result.get('app') not in {'installation_staged','waiting_for_app_exit'}: return
-        if self._license_busy or self._generation_active:
-            self.knowledge_status.set('新版已验证，等待当前提取或生成完成后自动保存并安装')
-            return
-        try:
-            from app_updater import _data_dir
-            from session_checkpoint import save
-            from update_storage import write_json
-            config=self._draft_config()
-            save(_data_dir()/'private_session_checkpoint.json',result['new_version'],config,self.step,self.policies,self.settings)
-            write_json(self._config_path(),config)
-        except Exception:
-            self.knowledge_status.set('资料自动保存失败，保留当前窗口，不执行自动关闭')
-            return
-        self.destroy()
 
     def _apply_windows_icons(self) -> None:
         """Force native small/large icons so Windows cannot reuse a stale taskbar bitmap."""
@@ -318,26 +240,7 @@ class PolicyStudio(tk.Tk):
             bg="#343b47", fg=WHITE, activebackground=ORANGE, activeforeground=WHITE,
             relief="flat", font=("Microsoft YaHei UI", 9), padx=8, pady=5)
         self._license_button.pack(side="right")
-        self.software_status = tk.StringVar(value="正在读取程序版本与安装状态")
-        tk.Label(header, textvariable=self.software_status, bg=PANEL, fg=MUTED, wraplength=530,
-                 justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(3,0))
         tk.Label(header, text="三步完成店铺基础资料设置", bg=PANEL, fg=MUTED, font=("Microsoft YaHei UI", 10)).pack(anchor="w", pady=(5, 0))
-        tk.Label(header, textvariable=self.knowledge_status, bg=PANEL, fg=ORANGE,
-                 wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", pady=(1, 0))
-        self.progress_text = tk.StringVar(value="0% · 预计剩余：正在估算")
-        progress_row = tk.Frame(self.card, bg=PANEL)
-        progress_row.pack(fill="x", padx=30, pady=(2, 3))
-        tk.Button(progress_row, text="更新详情", command=self._show_update_details, bg="#343b47", fg=WHITE,
-                  relief="flat", font=("Microsoft YaHei UI", 9), padx=8, pady=2).pack(side="right", anchor="n")
-        tk.Label(progress_row, textvariable=self.progress_text, bg=PANEL, fg=ORANGE,
-                 wraplength=450, justify="left", font=("Microsoft YaHei UI", 9)).pack(side="left", fill="x", expand=True)
-        self.activity_text = tk.StringVar(value="正在建立检查任务")
-        tk.Label(self.card, textvariable=self.activity_text, bg=PANEL, fg=MUTED,
-                 wraplength=530, justify="left", font=("Microsoft YaHei UI", 8)).pack(anchor="w", padx=30, pady=(0,3))
-        self.progress = tk.Canvas(self.card, height=8, bg="#303640", highlightthickness=0)
-        self.progress.pack(fill="x", padx=30)
-        self.progress_fill = self.progress.create_rectangle(0, 0, 0, 8, fill=ORANGE, outline="")
-        self.progress.bind("<Configure>", lambda _: self._update_progress())
         self.footer = tk.Frame(self.card, bg=PANEL, padx=30, pady=10)
         self.footer.pack(side="bottom", fill="x")
         self.content = tk.Frame(self.card, bg=PANEL, padx=30, pady=14)
@@ -396,56 +299,6 @@ class PolicyStudio(tk.Tk):
         for child in widget.winfo_children():
             child.destroy()
 
-    def _update_progress(self) -> None:
-        status = getattr(self, "progress_status", {"state": "checking", "progress_percent": 0})
-        status = dict(status)
-        if status.get("update_status"):
-            status["update_status"] = dict(status["update_status"])
-            source = str(status["update_status"].get("source") or "").removeprefix("Country — ")
-            status["update_status"]["source_label"] = MARKET_NAMES_CN.get(source, source)
-        ratio = max(0, min(100, int(status.get("progress_percent", 100 if status.get("checked_at") else 0)))) / 100
-        self.progress_text.set(progress_caption(status))
-        self.activity_text.set(activity_caption(status))
-        self.progress.coords(self.progress_fill, 0, 0, self.progress.winfo_width() * ratio, 8)
-
-    def _show_update_details(self):
-        existing = getattr(self, "_update_details_window", None)
-        if existing is not None and existing.winfo_exists():
-            existing.lift()
-            return
-        from tkinter.scrolledtext import ScrolledText
-        window = tk.Toplevel(self)
-        window.title("Policy Amadeus · 更新详情")
-        window.geometry("820x540")
-        window.minsize(620, 380)
-        window.configure(bg=PANEL)
-        tk.Label(window, text="实际步骤、等待原因与当前聊天交接", bg=PANEL, fg=WHITE,
-                 font=("Microsoft YaHei UI", 13, "bold")).pack(anchor="w", padx=18, pady=(14,8))
-        text = ScrolledText(window, wrap="word", bg="#111823", fg=WHITE, relief="flat",
-                            font=("Microsoft YaHei UI", 10), padx=12, pady=10)
-        text.pack(fill="both", expand=True, padx=18, pady=(0,14))
-        self._update_details_window, self._update_details_text = window, text
-        self._last_update_detail = None
-        self._refresh_update_details()
-
-    def _refresh_update_details(self):
-        window = getattr(self, "_update_details_window", None)
-        if window is None or not window.winfo_exists():
-            return
-        from codex_handoff import read
-        events = read("codex_review_events.json", [])
-        requests = read("codex_repair_requests.json").get("requests", {}).values()
-        value = update_detail_text(getattr(self, "progress_status", {}), events, requests)
-        text = self._update_details_text
-        if getattr(self, "_last_update_detail", None) == value:
-            return
-        position = text.yview()[0]
-        text.configure(state="normal")
-        text.delete("1.0", "end")
-        text.insert("1.0", value)
-        text.configure(state="disabled")
-        text.yview_moveto(position)
-        self._last_update_detail = value
 
     def show_step(self, step: int) -> None:
         self.step = step
@@ -461,7 +314,6 @@ class PolicyStudio(tk.Tk):
         self._clear(self.content)
         self._clear(self.footer)
         self.content.configure(padx=30, pady=14)
-        self._update_progress()
         (self._country_step, self._email_step, self._pdf_step, self._complete_step)[step]()
         self.after_idle(lambda: self._set_card_transparency(True))
         self.after_idle(self._render_background)
@@ -798,7 +650,6 @@ class PolicyStudio(tk.Tk):
         add_grouped("GMC语言一致性", lambda m: m["language_consistency"])
         add_grouped("一致性检查", lambda m: f"状态：{m.get('validation_status', '未执行')}\n已检查：{'、'.join(str(x) for x in m.get('validation_checks', []))}")
         add_grouped("检查警告", lambda m: "\n".join(str(x) for x in m.get("validation_warnings", [])) or "无")
-        add_grouped("知识库更新检查", lambda m: m.get("knowledge_update_status", "未执行"))
         add_grouped("AI辅助审阅", lambda m: f"{m.get('ai_audit_status', '未启用')}\n" + ("\n".join(str(x) for x in m.get("ai_audit_findings", [])) or "无额外发现"))
         add_grouped("官方核验状态", lambda m: f"{m['coverage_status']}；核验日期：{m['verified_on']}")
         add_grouped("官方依据", lambda m: "\n".join(str(item) for item in m["official_sources"]))
@@ -1069,13 +920,5 @@ class PolicyStudio(tk.Tk):
 
 
 if __name__ == "__main__":
-    if "--auto-update" in sys.argv:
-        from app_updater import run_auto_update
-
-        run_auto_update()
-    else:
-        from app_updater import start_app_update_check, start_schedule_registration
-
-        start_schedule_registration()
-        start_app_update_check()
-        PolicyStudio().mainloop()
+    from policy_entry import main
+    main()

@@ -14,7 +14,7 @@ class IndependentLicenseTests(unittest.TestCase):
         fields = {"legal_name": "Synthetic Example Ltd", "registration_number": "12345678"}
         with patch("policy_studio.extract_license_fields", return_value=fields) as extract, \
              patch("policy_studio.generate_translated_bundle", side_effect=AssertionError("policy gate")), \
-             patch("policy_studio.get_status", side_effect=AssertionError("update dependency")):
+             patch("policy_validator.require_no_detected_change", side_effect=AssertionError("policy gate")):
             PolicyStudio._extract_license_worker(app, "synthetic.pdf")
         extract.assert_called_once_with("synthetic.pdf")
         self.assertEqual(app._license_queue.get_nowait(), ("ok", (fields, "synthetic.pdf")))
@@ -37,8 +37,7 @@ class IndependentLicenseTests(unittest.TestCase):
     def test_result_available_from_all_steps_while_updates_blocked(self):
         blocked = {"state": "review_required", "message": "政策尚未更新",
                    "update_status": {"state": "retry_pending"}}
-        with patch("policy_studio.start_startup_check"), patch("policy_studio.get_status", return_value=blocked), \
-             patch.object(PolicyStudio, "_load_config"), \
+        with patch.object(PolicyStudio, "_load_config"), \
              patch.object(PolicyStudio, "_set_card_transparency"), patch.object(PolicyStudio, "_apply_windows_icons"):
             app = PolicyStudio()
             app.withdraw()
@@ -77,7 +76,7 @@ class IndependentLicenseTests(unittest.TestCase):
         self.assertIn(("执照 · VAT ID（仅执照明确记载时）","未识别（请对照执照手动确认）"),rows)
 
     def test_result_filename_tracks_parsed_file_not_later_selection(self):
-        with patch("policy_studio.start_startup_check"), patch.object(PolicyStudio,"_load_config"), \
+        with patch.object(PolicyStudio,"_load_config"), \
              patch.object(PolicyStudio,"_set_card_transparency"),patch.object(PolicyStudio,"_apply_windows_icons"):
             app=PolicyStudio()
             app.withdraw()
@@ -93,7 +92,7 @@ class IndependentLicenseTests(unittest.TestCase):
                 app.destroy()
 
     def test_long_field_copy_is_complete_and_small_window_can_scroll(self):
-        with patch("policy_studio.start_startup_check"),patch.object(PolicyStudio,"_load_config"), \
+        with patch.object(PolicyStudio,"_load_config"), \
              patch.object(PolicyStudio,"_set_card_transparency"),patch.object(PolicyStudio,"_apply_windows_icons"):
             app=PolicyStudio()
             app.withdraw()
