@@ -387,12 +387,27 @@ class PolicyStudio(tk.Tk):
 
         def confirm() -> None:
             result.set(entry.get().strip() if entry is not None else "__OK__")
+            overlay.destroy()
+
+        def cancel() -> None:
+            result.set("__CANCEL__")
+            overlay.destroy()
 
         if entry is not None:
-            self._button(actions, "取消", lambda: result.set("__CANCEL__")).pack(side="right", padx=(7, 0))
+            self._button(actions, "取消", cancel).pack(side="right", padx=(7, 0))
             entry.bind("<Return>", lambda _e: confirm())
         self._button(actions, "确定", confirm, True).pack(side="right")
-        overlay.lift(); self.wait_variable(result); value = result.get(); overlay.destroy()
+        overlay.lift()
+        try:
+            self.wait_window(overlay)
+        except tk.TclError:
+            if not getattr(self, '_destroying', False):
+                raise
+        if getattr(self, '_destroying', False):
+            return None
+        value = result.get()
+        if value == "__WAITING__":
+            return None
         return None if value == "__CANCEL__" else value
 
     def _country_step(self) -> None:
@@ -912,6 +927,8 @@ class PolicyStudio(tk.Tk):
         self._generation_active=False
         if status == "error":
             self._app_dialog("无法生成政策", payload)
+            if getattr(self, '_destroying', False):
+                return
             self.show_step(2)
             return
         self.policies, self.settings = payload
