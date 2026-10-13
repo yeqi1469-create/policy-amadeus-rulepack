@@ -1215,4 +1215,12 @@ def generate_translated_bundle(
     if generated_markets != canonical_requested:
         raise RuntimeError("生成结果未完整保留全部所选国家，已停止输出，请重新选择。")
     first["bundle_validation_status"] = validate_combined(first["markets"], len(combined))
+    unresolved=list(dict.fromkeys(s for market in first['markets'] for s in market.get('unresolved_legal_findings',[])))
+    if unresolved:
+        notice='DRAFT — PENDING LEGAL REVIEW — NOT FOR PUBLICATION\n待法律复核草稿，不可直接发布\n'+', '.join(unresolved)
+        combined=[(title,notice+'\n\n'+body) for title,body in combined]
+        first['legal_review_status']='pending'
+        first['publication_approved']=False
+        first['validation_warnings']=list(dict.fromkeys(warning for market in first['markets'] for warning in market.get('validation_warnings',[])))
+        first['unresolved_legal_findings']=unresolved
     return combined, first

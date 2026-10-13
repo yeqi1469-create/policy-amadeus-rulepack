@@ -169,5 +169,18 @@ class GenerationTests(unittest.TestCase):
             with self.subTest(title=title):
                 self.assertEqual(body.count('# Ireland\n'), 1)
                 self.assertEqual(body.count('# Croatia\n'), 1)
+    def test_lithuania_legacy_finding_generates_six_visible_drafts_without_clearance(self):
+        with tempfile.TemporaryDirectory() as directory,patch.dict(os.environ,LOCALAPPDATA=directory):
+            report=Path(directory)/'Policy Amadeus'/'knowledge_coverage_latest.json'
+            report.parent.mkdir()
+            original=json.dumps({'changed':['Country — Lithuania'],'rulepack_version':'older_report'})
+            report.write_text(original,encoding='utf-8')
+            policies,settings=generate_translated_bundle('Lithuania','support@example.com','+45 12 34 56 78',str(LICENCE_DIR/'12710.pdf'),'英语','Example','https://example.com')
+            self.assertEqual(len(policies),6)
+            self.assertTrue(all(body.startswith('DRAFT — PENDING LEGAL REVIEW — NOT FOR PUBLICATION') for _,body in policies))
+            self.assertEqual(settings['legal_review_status'],'pending')
+            self.assertFalse(settings['publication_approved'])
+            self.assertEqual(report.read_text(encoding='utf-8'),original)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

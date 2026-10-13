@@ -253,9 +253,11 @@ def require_no_detected_change(markets=None):
     except (OSError,ValueError):
         report={}
     names=set(markets or [])
-    changed=list(report.get('changed',[])) if report.get('rulepack_version')==load_rulepack()['rulepack_version'] else []
+    load_rulepack()  # Preserve expiry and structural checks before drafting.
+    changed=list(report.get('changed',[]))
     relevant=[s for s in changed if not s.startswith('Country — ') or not names or s.removeprefix('Country — ') in names]
     if relevant:
-        raise RuntimeError('这些政策规则仍有未完成的法律复核，请在当前聊天手动更新：'+', '.join(relevant))
+        return {'state':'draft_pending_review','message':'仅生成待法律复核草稿，不可直接发布：'+', '.join(relevant),
+                'unresolved_findings':relevant,'unrelated_findings':[s for s in changed if s not in relevant]}
     return {'state':'manual_maintenance','message':'使用本地规则；未自动检查法律最新状态',
             'unrelated_findings':changed}

@@ -21,7 +21,9 @@ class ManualMaintenanceTests(unittest.TestCase):
             report=path/'knowledge_coverage_latest.json'
             text=json.dumps({'rulepack_version':'synthetic','changed':['Country — Latvia']})
             report.write_text(text,encoding='utf-8')
-            with self.assertRaises(RuntimeError): knowledge_update.require_no_detected_change(['Latvia'])
+            status=knowledge_update.require_no_detected_change(['Latvia'])
+            self.assertEqual(status['state'],'draft_pending_review')
+            self.assertEqual(status['unresolved_findings'],['Country — Latvia'])
             self.assertEqual(report.read_text(encoding='utf-8'),text)
     def test_packaged_modules_exclude_automatic_services(self):
         source=Path('Shopify Policy Studio.spec').read_text(encoding='utf-8')

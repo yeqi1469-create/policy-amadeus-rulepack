@@ -91,6 +91,8 @@ def validate_market(policies: list[tuple[str, str]], settings: dict[str, object]
         except (ValueError,RuntimeError):
             pass
     update_status = require_no_detected_change(markets=relevant)
+    if update_status.get('state')=='draft_pending_review':
+        warnings.append(update_status['message'])
     if update_status.get('unrelated_findings'):
         warnings.append('其他国家仍有未完成待办，不代表全部国家法律已核验：'+', '.join(update_status['unrelated_findings']))
 
@@ -99,7 +101,7 @@ def validate_market(policies: list[tuple[str, str]], settings: dict[str, object]
     checks.append("法规规则库版本和复核期限")
     if update_status.get("state") in {"offline", "partial", "update_failed"}:
         warnings.append(str(update_status.get("message", "本次启动未能连接全部官方来源")))
-    checks.append("启动时官方来源更新检测")
+    checks.append("本地历史待复核记录检查（不联网）")
 
     if len(policies) != 6:
         errors.append(f"应生成6份政策，实际为{len(policies)}份")
@@ -193,6 +195,9 @@ def validate_market(policies: list[tuple[str, str]], settings: dict[str, object]
     return {
         **meta,
         "knowledge_update_status": str(update_status.get("message", "")),
+        "legal_review_status": "pending" if update_status.get('state')=='draft_pending_review' else "local_rules_only",
+        "publication_approved": False,
+        "unresolved_legal_findings": list(update_status.get('unresolved_findings',[])),
         "validation_status": "通过" if not errors else "不通过",
         "validation_errors": errors,
         "validation_warnings": warnings,

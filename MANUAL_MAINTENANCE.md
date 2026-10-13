@@ -6,6 +6,8 @@
 
 需要更新政策或程序时，请在当前聊天明确提出请求。
 
+旧网页检测待办存在时，可以生成明显标注“待法律复核、不可直接发布”的草稿；不会据此批准法律规则或清除待办。规则过期、执照缺失及内容一致性错误仍会阻止生成。
+
 测试：`python -m unittest discover -q`
 
 手动打包：`python -m PyInstaller --noconfirm "Shopify Policy Studio.spec"`
