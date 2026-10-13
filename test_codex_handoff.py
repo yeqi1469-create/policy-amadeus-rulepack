@@ -15,6 +15,21 @@ from update_progress import activity_caption, update_detail_text
 
 
 class HandoffTests(unittest.TestCase):
+    def test_endpoint_loss_and_error_label_do_not_redispatch_claimed_evidence(self):
+        status={'state':'retry_pending','source_errors':{self.source:{'reason':'双轮核验不一致',
+            'current_evidence':{self.url:'b'*64}}}}
+        bridge.submit(status)
+        key=next(iter(bridge.read('codex_repair_requests.json')['requests']))
+        bridge.claim([key],self.owner)
+        bridge.await_evidence([key],self.owner,'Synthetic investigation')
+        status['source_errors'][self.source]={'reason':'runtime timeout','current_evidence':{}}
+        bridge.submit(status)
+        tickets=bridge.read('codex_repair_requests.json')['requests']
+        self.assertEqual(len(tickets),1)
+        self.assertEqual(tickets[key]['state'],'awaiting_evidence')
+        self.assertEqual(tickets[key]['observed_current'],{self.url:'b'*64})
+        self.assertIn('runtime_or_transport',tickets[key]['observed_categories'])
+
     def test_new_verified_input_requeues_once_without_periodic_duplicate(self):
         status={'state':'retry_pending','source_errors':{self.source:{'reason':'双轮核验不一致',
                 'current_evidence':{self.url:'b'*64}}}}

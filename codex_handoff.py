@@ -108,6 +108,19 @@ def submit(status):
             signature=[source,code,observations]
             if current: signature.extend((current,list(SOURCES.get(source,()))))
             key = hashlib.sha256(json.dumps(signature, sort_keys=True).encode()).hexdigest()[:24]
+            # Losing an endpoint during a retry, or changing the error label,
+            # is not NEW evidence. Keep the acknowledged investigation and
+            # its fullest evidence set; retain categories below for diagnosis.
+            if observations and not source.startswith('__'):
+                existing=[item for item in tickets.values() if item.get('source')==source
+                    and item.get('state')!='resolved' and item.get('observed_pending')==observations
+                    and item.get('official_sources')==list(SOURCES.get(source,()))
+                    and item.get('owner_thread_id')
+                    and all((item.get('observed_current') or {}).get(url)==value for url,value in current.items())]
+                if existing:
+                    previous=min(existing,key=lambda item:item.get('first_seen',''))
+                    key=previous['id']
+                    current=dict(previous.get('observed_current') or {})
             # A catalogue/comparison rejection can be described by either
             # the reviewer or the body validator. That wording change is not
             # new official evidence. Keep its existing owner/delivery state.
