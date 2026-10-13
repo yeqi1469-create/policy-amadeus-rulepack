@@ -1,7 +1,7 @@
 {
   "Country — Romania": {
     "first_seen": "2026-09-29T06:56:14.013594+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -19,7 +19,7 @@
   },
   "Germany BGB": {
     "first_seen": "2026-09-29T07:00:36.344347+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -28,8 +28,8 @@
     "last_seen": "2026-09-30T06:12:21.285819+00:00",
     "status": "resolved_by_reviewed_rulepack",
     "observed_source_fingerprints": {},
-    "resolved_at": "2026-10-12T01:25:03.648089+00:00",
-    "rulepack_version": "2026.10.05-2"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Finland": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
@@ -39,25 +39,26 @@
       "https://www.finlex.fi/fi/lainsaadanto/1978/38": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa",
       "https://www.finlex.fi/fi/laki/ajantasa/1978/19780038": "ce9039b50696805f2146e9a427ac214ac28b91f7c87015b1c591e30052ecbcfa"
     },
-    "resolved_at": "2026-10-12T07:58:16.296306+00:00",
-    "rulepack_version": "2026.10.12-2"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Ukraine": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
-      "https://zakon.rada.gov.ua/laws/show/1023-12/print": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201"
+      "https://zakon.rada.gov.ua/laws/show/1023-12": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201",
+      "https://zakon.rada.gov.ua/go/1023-12": "d56594de993997df79dc5f227dd2cd3fdb0f94cabd316f667ae0dd08363bd201"
     }
   },
   "Country — Latvia": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
+      "https://likumi.lv/ta/id/300099": "1b028487449cb73a87a7dbddccd13fc3686c472153c8c36707f4e77e092d7125",
       "https://likumi.lv/ta/id/96619": "13348ff5cc478275b1ad6fced90f4e41e2838da084bc9e3406a7b9702b6cb0cb",
       "https://likumi.lv/ta/id/266462": "a0030d6532fa24c3ea056b8c10bc3722f0612c678498834166bc731fe93bf5a8",
-      "https://likumi.lv/ta/id/300099": "1b028487449cb73a87a7dbddccd13fc3686c472153c8c36707f4e77e092d7125",
       "https://likumi.lv/ta/id/23309": "10c55baef21aa0ac60026c9816e08bb7f80bc16c926c3df27fc4198032ff051f"
     }
   },
@@ -68,8 +69,8 @@
     "observed_source_fingerprints": {
       "https://consumator.gov.md/en/node/575": "299f620b470b47d8997ae6e65785ab49ea5a4acc6c55339a438b02e46a66af33"
     },
-    "resolved_at": "2026-10-12T01:25:03.648089+00:00",
-    "rulepack_version": "2026.10.05-2"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Luxembourg": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
@@ -79,12 +80,12 @@
       "https://mpc.gouvernement.lu/en/actualites.gouvernement2024%2Bfr%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B06-juin%2B10-dpc-nouvelle-loi.html": "b7b6c278a41a1000eb02087de2d05b37a96760a68360c055a009131621c326ef",
       "https://guichet.public.lu/fr/entreprises/commerce/pratiques-commerciales/vente/a-distance-b2c.html": "7ae7c7e014fe1278314e468dbff9b6d7db7e4ec01605a4e31e773e3a64644886"
     },
-    "resolved_at": "2026-10-12T01:25:03.648089+00:00",
-    "rulepack_version": "2026.10.05-2"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Germany": {
     "first_seen": "2026-09-30T05:41:15.678696+00:00",
-    "last_seen": "2026-10-12T07:58:16.296306+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
@@ -95,8 +96,8 @@
     "observed_source_fingerprints": {
       "https://legislation.mt/eli/cap/378/eng/pdf": "f1f09c4c2d7befdab04cda786598268fe912bb555972bb5ff222275f6a60c850"
     },
-    "resolved_at": "2026-10-12T01:25:03.648089+00:00",
-    "rulepack_version": "2026.10.05-2"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Belgium": {
     "first_seen": "2026-10-03T05:57:25.377160+00:00",
@@ -106,7 +107,7 @@
   },
   "Country — Lithuania": {
     "first_seen": "2026-10-06T03:04:46.412933+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.6020/asr": "9a82b12f14eb0553c84eed5d1a1c9036857dd62788e0cf9360af25f27f1cc1ed"
@@ -114,19 +115,19 @@
   },
   "Country — Iceland": {
     "first_seen": "2026-10-07T01:38:53.357400+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {}
   },
   "Country — France": {
     "first_seen": "2026-10-07T01:38:53.357400+00:00",
-    "last_seen": "2026-10-07T01:38:53.357400+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   },
   "Country — Montenegro": {
     "first_seen": "2026-10-08T02:02:51.003315+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.sluzbenilist.me/propisi/390427": "6bdaea5ee26a0d9a1cfc4dda1578160b59f9fec2e115c6ff49b572de8502dd38",
@@ -146,12 +147,12 @@
     "observed_source_fingerprints": {
       "https://files.diariodarepublica.pt/1s/2021/10/20200/0000400029.pdf": "a9b0ef7b8e79d02f9cf301f226c62e6aca8444e7b26b5c0be5fc828b12ea9a42"
     },
-    "resolved_at": "2026-10-12T03:01:43.105932+00:00",
-    "rulepack_version": "2026.10.12-1"
+    "resolved_at": "2026-10-13T01:23:39.953268+00:00",
+    "rulepack_version": "2026.10.12-3"
   },
   "Country — Serbia": {
     "first_seen": "2026-10-10T01:50:42.749770+00:00",
-    "last_seen": "2026-10-12T21:57:13.158897+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "pending_legal_review",
     "observed_source_fingerprints": {
       "https://www.parlament.gov.rs/upload/archive/files/lat/pdf/zakoni/14_saziv/1317-26-lat..pdf": "96801dfc69a0f40487247dce8cc20faf28a384ffb996ab187433c7b03a796ac1",
@@ -161,6 +162,12 @@
   "Country — Croatia": {
     "first_seen": "2026-10-10T01:50:42.749770+00:00",
     "last_seen": "2026-10-10T01:50:42.749770+00:00",
+    "status": "retry_official_source",
+    "observed_source_fingerprints": {}
+  },
+  "Country — Bosnia and Herzegovina": {
+    "first_seen": "2026-10-13T01:23:39.953268+00:00",
+    "last_seen": "2026-10-13T01:23:39.953268+00:00",
     "status": "retry_official_source",
     "observed_source_fingerprints": {}
   }
